@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LunaPA Converter</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#fff; --ink:#14171a; --muted:#5b6470; --line:#dfe3e8;
+  --accent:#3d5afe; --ok:#0a7d3f; --okbg:#e6f5ec; --warn:#8a5300; --warnbg:#fdf3e2;
+  --err:#b3261e; --errbg:#fdecea; --code:#f0f2f5; --shadow:0 1px 2px rgba(0,0,0,.06),0 8px 24px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0f1216; --panel:#171b21; --ink:#e6e9ee; --muted:#98a2b0; --line:#282f38;
+    --accent:#8ba4ff; --ok:#5ddc9a; --okbg:#123324; --warn:#f0c070; --warnbg:#33280f;
+    --err:#ff8b80; --errbg:#3a1a17; --code:#11151a; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  padding:28px 20px 60px}
+.wrap{max-width:820px;margin:0 auto}
+h1{font-size:20px;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 22px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 12px;font-weight:600}
+
+#drop{border:1.5px dashed var(--line);border-radius:12px;padding:34px 20px;text-align:center;cursor:pointer;
+  transition:border-color .15s,background .15s;background:var(--panel)}
+#drop:hover,#drop.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--panel))}
+#drop strong{display:block;font-size:15.5px;margin-bottom:4px}
+#drop span{color:var(--muted);font-size:13px}
+input[type=file]{display:none}
+
+table.kv{width:100%;border-collapse:collapse;font-size:13.5px}
+table.kv td{padding:5px 0;vertical-align:top;border-bottom:1px solid var(--line)}
+table.kv tr:last-child td{border-bottom:0}
+table.kv td:first-child{color:var(--muted);width:150px;white-space:nowrap}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12.5px}
+code{background:var(--code);padding:1px 5px;border-radius:4px}
+
+.nets{display:grid;gap:10px}
+label.net{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;
+  padding:12px 14px;cursor:pointer;transition:border-color .15s,background .15s}
+label.net:hover{border-color:var(--accent)}
+label.net input{margin:3px 0 0;accent-color:var(--accent);width:16px;height:16px;flex:none}
+label.net b{display:block;font-size:14.5px;font-weight:600}
+label.net em{display:block;color:var(--muted);font-style:normal;font-size:12.5px;margin-top:2px}
+
+label.opt{display:flex;gap:11px;align-items:flex-start;margin-top:14px;
+  font-size:13px;color:var(--muted);cursor:pointer;line-height:1.5}
+label.opt input{margin:2px 0 0;accent-color:var(--accent);width:15px;height:15px;flex:none}
+label.opt b{color:var(--ink-2)}
+button.go{margin-top:14px;width:100%;padding:12px;border:0;border-radius:10px;background:var(--accent);
+  color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit}
+button.go:disabled{opacity:.45;cursor:not-allowed}
+@media (prefers-color-scheme:dark){button.go{color:#0f1216}}
+
+.res{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.res:last-child{border-bottom:0}
+.res .nm{flex:1 1 240px;min-width:0;word-break:break-all}
+.res .sz{color:var(--muted);font-size:12.5px;white-space:nowrap}
+button.dl{border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:8px;
+  padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+button.dl:hover{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+
+.badge{font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:5px;white-space:nowrap}
+.b-ok{background:var(--okbg);color:var(--ok)}
+.b-warn{background:var(--warnbg);color:var(--warn)}
+.b-err{background:var(--errbg);color:var(--err)}
+
+ul.log{list-style:none;margin:0;padding:0;font-size:13px}
+ul.log li{padding:4px 0 4px 20px;position:relative;color:var(--ink)}
+ul.log li:before{content:"✓";position:absolute;left:0;color:var(--ok);font-weight:700}
+ul.log li.w:before{content:"!";color:var(--warn)}
+ul.log li.w{color:var(--warn)}
+.hide{display:none!important}
+.links-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 16px}
+@media(max-width:600px){.links-grid{grid-template-columns:1fr}}
+.links-grid .field{display:flex;flex-direction:column;gap:5px}
+.links-grid label{font-size:12px;font-weight:600;color:var(--muted)}
+.links-grid input{border:1px solid var(--line);border-radius:8px;padding:8px 11px;font-size:13px;
+  background:var(--panel);color:var(--ink);outline:none;font-family:inherit}
+.links-grid input:focus{border-color:var(--accent)}
+
+button.dl-all{border:0;background:var(--accent);color:#fff;border-radius:8px;
+  padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+button.dl-all:hover{opacity:.9}
+@media (prefers-color-scheme:dark){button.dl-all{color:#0f1216}}
+button.btn-test{border:1px solid var(--line);background:var(--code);color:var(--ink);border-radius:8px;
+  padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;margin-left:6px}
+button.btn-test:hover{border-color:var(--accent);color:var(--accent)}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.68);backdrop-filter:blur(4px);z-index:999;
+  display:flex;align-items:center;justify-content:center;padding:16px}
+.modal-box{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+  width:100%;max-width:960px;height:90vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--line);background:var(--panel);flex:none}
+.modal-bar h3{margin:0;font-size:15px;font-weight:600}
+.modal-actions{display:flex;gap:8px;align-items:center}
+.modal-btn{padding:6px 12px;border:1px solid var(--line);background:var(--code);border-radius:6px;
+  color:var(--ink);cursor:pointer;font-size:12.5px;font-family:inherit;font-weight:500}
+.modal-btn:hover{border-color:var(--accent)}
+.modal-close{padding:4px 10px;font-weight:700;font-size:18px;cursor:pointer;border:0;background:transparent;color:var(--muted);line-height:1}
+.modal-close:hover{color:var(--ink)}
+.modal-content{display:flex;flex:1;overflow:hidden;gap:16px;padding:16px;background:var(--bg)}
+@media(max-width:800px){.modal-content{flex-direction:column;overflow-y:auto}}
+.phone-wrap{flex:none;display:flex;justify-content:center;align-items:center}
+.phone-frame{width:340px;height:600px;background:#000;border-radius:24px;border:7px solid #222;overflow:hidden;box-shadow:0 12px 32px rgba(0,0,0,.35);position:relative;transition:width .2s,height .2s}
+.phone-frame.landscape{width:600px;height:340px}
+.phone-frame iframe{width:100%;height:100%;border:0;background:#000;display:block}
+.monitor-panel{flex:1;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:280px;overflow:hidden}
+.monitor-panel h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;color:var(--muted);letter-spacing:.05em}
+.cta-status-box{padding:12px 14px;border-radius:8px;margin-bottom:14px;font-size:13px;border:1px solid var(--line)}
+.cta-waiting{background:var(--code);color:var(--muted)}
+.cta-success{background:var(--okbg);border-color:var(--ok);color:var(--ok)}
+.cta-fail{background:var(--warnbg);border-color:var(--warn);color:var(--warn)}
+.event-stream{flex:1;overflow-y:auto;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;display:flex;flex-direction:column;gap:6px;padding-right:4px}
+.stream-item{padding:6px 9px;border-radius:5px;background:var(--code);border-left:3px solid var(--muted);word-break:break-all;line-height:1.4}
+.stream-item.cta{border-left-color:var(--ok);background:var(--okbg);color:var(--ok);font-weight:600}
+.stream-item.warn{border-left-color:var(--warn);background:var(--warnbg);color:var(--warn)}
+.stream-item.evt{border-left-color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>LunaPA Converter</h1>
+  <p class="sub">Chuyển playable ad export từ Luna Playground (Unity Ads&nbsp;/&nbsp;MRAID) sang build hợp lệ cho Mintegral, Google Ads, AppLovin và Meta. Chạy hoàn toàn trong máy bạn — file không đi đâu cả.</p>
+
+  <div id="drop">
+    <strong>Kéo file vào đây, hoặc bấm để chọn</strong>
+    <span>File <code>.html</code> hoặc <code>.zip</code> tải từ playground.lunalabs.io</span>
+    <input type="file" id="file" accept=".html,.htm,.zip">
+  </div>
+
+  <div id="errBox" class="card hide"><div class="err" id="errMsg"></div></div>
+
+  <div id="info" class="card hide">
+    <h2>File đã nạp</h2>
+    <table class="kv"><tbody id="kv"></tbody></table>
+    <div class="note" id="infoNote"></div>
+  </div>
+
+  <div id="pick" class="card hide">
+    <h2>Chọn network</h2>
+    <div class="nets">
+      <label class="net"><input type="checkbox" value="mintegral" checked>
+        <span><b>Mintegral / Mindworks</b><em>CTA → <code>window.install()</code>, end card → <code>window.gameEnd()</code>. Xuất single HTML + ZIP.</em></span></label>
+      <label class="net"><input type="checkbox" value="google" checked>
+        <span><b>Google Ads — App campaigns / AdMob</b><em>CTA → <code>ExitApi.exit()</code>, thêm <code>exitapi.js</code> + meta orientation. Chỉ xuất ZIP (Google không nhận HTML rời).</em></span></label>
+      <label class="net"><input type="checkbox" value="applovin" checked>
+        <span><b>AppLovin — AppDiscovery / MAX</b><em>CTA → <code>mraid.open()</code> (có gate chờ mraid ready), analytics qua <code>ALPlayableAnalytics</code>. Chỉ xuất single HTML (AppLovin không nhận ZIP).</em></span></label>
+      <label class="net"><input type="checkbox" value="meta" checked>
+        <span><b>Meta / Facebook — Ads Manager</b><em>CTA → <code>FbPlayableAd.onCTAClick()</code> (Meta không dùng MRAID). Limit riêng: single HTML 2 MB, ZIP 5 MB — file quá 2 MB thì chỉ xuất ZIP.</em></span></label>
+      <label class="net"><input type="checkbox" value="tiktok" checked>
+        <span><b>TikTok — Ads Manager</b><em>CTA → <code>window.openAppStore()</code> qua SDK của TikTok. ZIP gồm <code>index.html</code> + <code>config.json</code>. Cấm creative dạng MRAID.</em></span></label>
+    </div>
+    <label class="opt"><input type="checkbox" id="universal">
+      <span>Dùng <b>Universal Adapter</b> (thử nghiệm) — 1 adapter feature-detect dùng chung cho mọi network, tự nhận diện SDK runtime và nối thẳng vào thẻ <code>&lt;script&gt;</code> cuối của Luna thay vì tạo thẻ mới. Bản Mintegral, AppLovin, Meta sẽ trùng khớp từng byte (byte-identical).</span></label>
+    <label class="opt"><input type="checkbox" id="readable">
+      <span>Giữ adapter ở dạng <b>dễ đọc</b> (có comment) — chỉ dùng khi debug. Mặc định là bản rút gọn, không lộ ý nghĩa phần thêm vào.</span></label>
+    <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px;">
+      <div style="font-weight:600;font-size:13px;margin-bottom:8px;color:var(--ink);">Store Links (tuỳ chọn sửa đè)</div>
+      <div class="links-grid">
+        <div class="field">
+          <label for="iosLinkInput">iOS Store Link:</label>
+          <input type="text" id="iosLinkInput" placeholder="https://apps.apple.com/app/id... (để trống nếu giữ nguyên)">
+        </div>
+        <div class="field">
+          <label for="androidLinkInput">Android Store Link:</label>
+          <input type="text" id="androidLinkInput" placeholder="https://play.google.com/store/apps/details?id=... (để trống nếu giữ nguyên)">
+        </div>
+      </div>
+    </div>
+    <button class="go" id="go">Convert</button>
+  </div>
+
+  <div id="fixes" class="card hide">
+    <h2>Đã làm sạch</h2>
+    <ul class="log" id="fixList"></ul>
+  </div>
+
+  <div id="out" class="card hide">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+      <h2 style="margin:0;">Kết quả</h2>
+      <button id="dlAll" class="dl-all hide">📦 Tải tất cả bản build (.zip)</button>
+    </div>
+    <div id="outList"></div>
+    <div class="note">Vẫn phải test trên playable tester của network (PlayTurbo / Google Ads preview / AppLovin Playable Preview / Meta playable preview) trước khi chạy tiền.</div>
+  </div>
+
+  <div id="warns" class="card hide">
+    <h2>Cần chú ý</h2>
+    <ul class="log" id="warnList"></ul>
+  </div>
+
+</div>
+
+<!-- Modal Emulator Test CTA -->
+<div id="emulatorModal" class="modal-bg hide">
+  <div class="modal-box">
+    <div class="modal-bar">
+      <div>
+        <h3 id="emuTitle">Kiểm tra CTA</h3>
+        <span id="emuSubtitle" style="font-size:12px;color:var(--muted);">Sandbox với Mock SDK &amp; Interceptor</span>
+      </div>
+      <div class="modal-actions">
+        <button id="emuOrientBtn" class="modal-btn">📱 Đổi hướng: Dọc</button>
+        <button id="emuReloadBtn" class="modal-btn">🔄 Tải lại</button>
+        <button id="emuCloseBtn" class="modal-close">&times;</button>
+      </div>
+    </div>
+    <div class="modal-content">
+      <div class="phone-wrap">
+        <div id="phoneFrame" class="phone-frame">
+          <iframe id="emuIframe" sandbox="allow-scripts allow-same-origin allow-modals"></iframe>
+        </div>
+      </div>
+      <div class="monitor-panel">
+        <h4>Trạng thái CTA</h4>
+        <div id="ctaStatusBox" class="cta-status-box cta-waiting">
+          <b id="ctaStatusTitle">Chờ tương tác trong game...</b>
+          <div id="ctaStatusDetail" style="margin-top:4px;font-size:12px;color:var(--muted);">Nhấp vào nút CTA hoặc hoàn thành gameplay để kiểm tra lệnh gọi API.</div>
+        </div>
+        <h4>Nhật ký sự kiện (Real-time Log)</h4>
+        <div id="emuLogStream" class="event-stream">
+          <div class="stream-item" style="color:var(--muted);">Đang khởi tạo sandbox...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ===================== cấu hình network ===================== */
+var LIMIT = 5 * 1024 * 1024;
+var EXITAPI = "https://tpc.googlesyndication.com/pagead/gadgets/html5/api/exitapi.js";
+var TIKTOK_SDK = "https://sf16-muse-va.ibytedtos.com/obj/union-fe-nc-i18n/Playable/sdk/Playable-sdk.js";
+var MARKER = "LUNA-PA-CONVERTER";
+var VERSION = "1.0";
+
+var NETWORKS = {
+  mintegral: { label: "Mintegral / Mindworks (PlayTurbo)", emitHtml: true,  emitZip: true,  exitapi: false, orientMeta: false, limit: LIMIT },
+  google:    { label: "Google Ads (App campaigns / AdMob)", emitHtml: false, emitZip: true,  exitapi: true,  orientMeta: true,  limit: LIMIT },
+  applovin:  { label: "AppLovin (AppDiscovery / MAX)",      emitHtml: true,  emitZip: false, exitapi: false, orientMeta: false, limit: LIMIT },
+  /* TikTok: ZIP gom index.html + config.json o goc. Doc TikTok: <5MB nen;
+     bang cua Unity Playworks ghi 3MB -> canh bao tu 3MB. */
+  tiktok:    { label: "TikTok (Ads Manager)",              emitHtml: false, emitZip: true,  exitapi: false, orientMeta: false,
+               limit: LIMIT, softLimit: 3 * 1024 * 1024, tiktokSdk: true, zipExtra: "tiktokConfig" },
+  /* Meta: single HTML toi da 2MB, HOAC ZIP toi da 5MB (<=100 files) */
+  meta:      { label: "Meta / Facebook (Ads Manager)",      emitHtml: "if_fits", emitZip: true, exitapi: false, orientMeta: false,
+               limit: LIMIT, limitHtml: 2 * 1024 * 1024 }
+};
+
+var DEBUG_HOSTS = ["mrdoob.github.io", "cdn.jsdelivr.net"];
+var ALLOWED_HOSTS = ["play.google.com", "apps.apple.com", "itunes.apple.com",
+                     "tpc.googlesyndication.com", "sf16-muse-va.ibytedtos.com"];
+
+
+/* Bản RÚT GỌN của adapter (mặc định). Cùng logic với bản readable bên dưới,
+   nhưng đã minify + đổi tên biến + bỏ comment/log, marker không lộ tên network.
+   Chuỗi API mà validator quét vẫn còn nguyên văn — bắt buộc phải vậy. */
+var ADAPTER_MIN = {
+  "mintegral": "!function(){function n(n,i){var t=window.$environment&&window.$environment.packageConfig||{};n=n||t.iosLink,i=i||t.androidLink;var o=(window.navigator.userAgent||'').toLowerCase();return/iphone|ipad|ipod|macintosh/i.test(o)?n:i}function i(i,t){try{window.pi&&window.pi.logCta&&window.pi.logCta()}catch(n){}return'function'==typeof window.install?void window.install():'function'==typeof window.openStore?void window.openStore():'undefined'!=typeof mraid&&mraid.open?void mraid.open(n(i,t)):void window.open(n(i,t),'_blank')}i._lz='q3';var t=!1;function o(){try{window.dispatchEvent(new Event('luna:ended'))}catch(n){}try{window.pi&&window.pi.logGameEnd&&window.pi.logGameEnd()}catch(n){}t||'function'!=typeof window.gameEnd||(t=!0,window.gameEnd())}o._lz='q3','function'!=typeof window.gameStart&&(window.gameStart=function(){try{window.dispatchEvent(new Event('luna:resume'))}catch(n){}}),'function'!=typeof window.gameClose&&(window.gameClose=function(){try{window.dispatchEvent(new Event('luna:pause'))}catch(n){}});var e=0,a=setInterval(function(){e++;try{var n=window.Luna&&window.Luna.Unity&&window.Luna.Unity.Playable,t=window.Luna&&window.Luna.Unity&&window.Luna.Unity.LifeCycle;n&&n.InstallFullGame&&'q3'!==n.InstallFullGame._lz&&(n.InstallFullGame=i),!t||t.GameEnded&&'q3'===t.GameEnded._lz||(t.GameEnded=o)}catch(n){}e>600&&clearInterval(a)},100);window.addEventListener('luna:start',function(){if('function'==typeof window.gameReady)try{window.gameReady()}catch(n){}})}();",
+  "google": "!function(){function n(n,i){var o=window.$environment&&window.$environment.packageConfig||{};n=n||o.iosLink,i=i||o.androidLink;var e=(window.navigator.userAgent||'').toLowerCase();return/iphone|ipad|ipod|macintosh/i.test(e)?n:i}function i(i,o){try{window.pi&&window.pi.logCta&&window.pi.logCta()}catch(n){}return'undefined'!=typeof ExitApi&&ExitApi.exit?void ExitApi.exit():'string'==typeof window.clickTag&&window.clickTag?void window.open(window.clickTag,'_blank'):'undefined'!=typeof mraid&&mraid.open?void mraid.open(n(i,o)):void window.open(n(i,o),'_blank')}function o(){try{window.dispatchEvent(new Event('luna:ended'))}catch(n){}try{window.pi&&window.pi.logGameEnd&&window.pi.logGameEnd()}catch(n){}}i._lz='k8',o._lz='k8';var e=0,a=setInterval(function(){e++;try{var n=window.Luna&&window.Luna.Unity&&window.Luna.Unity.Playable,d=window.Luna&&window.Luna.Unity&&window.Luna.Unity.LifeCycle;n&&n.InstallFullGame&&'k8'!==n.InstallFullGame._lz&&(n.InstallFullGame=i),!d||d.GameEnded&&'k8'===d.GameEnded._lz||(d.GameEnded=o)}catch(n){}e>600&&clearInterval(a)},100)}();",
+  "applovin": "!function(){function n(n){try{void 0!==window.ALPlayableAnalytics&&window.ALPlayableAnalytics.trackEvent&&window.ALPlayableAnalytics.trackEvent(n)}catch(n){}}function a(a,e){try{window.pi&&window.pi.logCta&&window.pi.logCta()}catch(n){}n('CTA_CLICKED');var t=function(n,a){var e=window.$environment&&window.$environment.packageConfig||{};n=n||e.iosLink,a=a||e.androidLink;var t=(window.navigator.userAgent||'').toLowerCase();return/iphone|ipad|ipod|macintosh/i.test(t)?n:a}(a,e);(function(n){if('undefined'==typeof mraid||!mraid.open)return!1;var a=function(){try{mraid.open(n)}catch(n){}};try{if(mraid.getState&&'loading'===mraid.getState())return mraid.addEventListener('ready',function n(){try{mraid.removeEventListener('ready',n)}catch(n){}a()}),!0}catch(n){}return a(),!0})(t)||window.open(t,'_blank')}a._lz='w5';var e=!1;function t(){try{window.dispatchEvent(new Event('luna:ended'))}catch(n){}try{window.pi&&window.pi.logGameEnd&&window.pi.logGameEnd()}catch(n){}e||(e=!0,n('ENDCARD_SHOWN'))}t._lz='w5';var i={LogChallengeStarted:'CHALLENGE_STARTED',LogChallengeFailed:'CHALLENGE_FAILED',LogChallengeRetry:'CHALLENGE_RETRY',LogChallengePass25:'CHALLENGE_PASS_25',LogChallengePass50:'CHALLENGE_PASS_50',LogChallengePass75:'CHALLENGE_PASS_75',LogChallengeSolved:'CHALLENGE_SOLVED'};function o(a,e,t){var i=function(){n(t)};i._lz='w5';try{Object.defineProperty(a,e,{value:i,writable:!0,enumerable:!1,configurable:!0})}catch(n){try{a[e]=i}catch(n){return!1}}try{return!!a[e]&&'w5'===a[e]._lz}catch(n){return!1}}var r=0,l=setInterval(function(){r++;try{var n=window.Luna&&window.Luna.Unity,e=n&&n.Playable,d=n&&n.LifeCycle,c=n&&n.Analytics;e&&e.InstallFullGame&&'w5'!==e.InstallFullGame._lz&&(e.InstallFullGame=a),!d||d.GameEnded&&'w5'===d.GameEnded._lz||(d.GameEnded=t),c&&(c.Applovin||(c.Applovin={}),function(n){try{var a=n.LogChallengeStarted;return!!a&&'w5'===a._lz}catch(n){return!1}}(c.Applovin)||function(n){for(var a in i)i.hasOwnProperty(a)&&(o(n,a,i[a]),o(n,a+'$1',i[a]))}(c.Applovin))}catch(n){}r>600&&clearInterval(l)},100),d=['LOADING','LOADED','DISPLAYED'],c=0;function L(a){for(var e=d.indexOf(a)+1;c<e;)n(d[c]),c++}L('LOADING'),window.addEventListener('luna:build',function(){L('LOADED')}),window.addEventListener('luna:start',function(){L('DISPLAYED')})}();",
+  "meta": "!function(){function n(n){try{return'undefined'!=typeof FbPlayableAd&&'function'==typeof FbPlayableAd[n]}catch(n){return!1}}function a(n,a){var e=window.$environment&&window.$environment.packageConfig||{};n=n||e.iosLink,a=a||e.androidLink;var i=(window.navigator.userAgent||'').toLowerCase();return/iphone|ipad|ipod|macintosh/i.test(i)?n:a}function e(e,i){try{window.pi&&window.pi.logCta&&window.pi.logCta()}catch(n){}if(n('onCTAClick'))try{return void FbPlayableAd.onCTAClick()}catch(n){}'undefined'!=typeof mraid&&mraid.open?mraid.open(a(e,i)):window.open(a(e,i),'_blank')}e._lz='z2';var i=!1;function t(){try{window.dispatchEvent(new Event('luna:ended'))}catch(n){}try{window.pi&&window.pi.logGameEnd&&window.pi.logGameEnd()}catch(n){}if(!i&&(i=!0,n('logLevelComplete')))try{FbPlayableAd.logLevelComplete('game_end')}catch(n){}}t._lz='z2';var o=!1;function d(){if(!o&&n('logGameLoad')){o=!0;try{FbPlayableAd.logGameLoad()}catch(n){}}}var l=0,w=setInterval(function(){l++;try{var n=window.Luna&&window.Luna.Unity&&window.Luna.Unity.Playable,a=window.Luna&&window.Luna.Unity&&window.Luna.Unity.LifeCycle;n&&n.InstallFullGame&&'z2'!==n.InstallFullGame._lz&&(n.InstallFullGame=e),!a||a.GameEnded&&'z2'===a.GameEnded._lz||(a.GameEnded=t)}catch(n){}l>600&&clearInterval(w)},100);window.addEventListener('luna:build',d),window.addEventListener('luna:start',d)}();",
+  "tiktok": "!function(){function n(n,i){try{window.pi&&window.pi.logCta&&window.pi.logCta()}catch(n){}if('function'==typeof window.openAppStore)try{return void window.openAppStore()}catch(n){}window.open(function(n,i){var t=window.$environment&&window.$environment.packageConfig||{};n=n||t.iosLink,i=i||t.androidLink;var o=(window.navigator.userAgent||'').toLowerCase();return/iphone|ipad|ipod|macintosh/i.test(o)?n:i}(n,i),'_blank')}function i(){try{window.dispatchEvent(new Event('luna:ended'))}catch(n){}try{window.pi&&window.pi.logGameEnd&&window.pi.logGameEnd()}catch(n){}}n._lz='b6',i._lz='b6';var t=0,o=setInterval(function(){t++;try{var a=window.Luna&&window.Luna.Unity&&window.Luna.Unity.Playable,e=window.Luna&&window.Luna.Unity&&window.Luna.Unity.LifeCycle;a&&a.InstallFullGame&&'b6'!==a.InstallFullGame._lz&&(a.InstallFullGame=n),!e||e.GameEnded&&'b6'===e.GameEnded._lz||(e.GameEnded=i)}catch(n){}t>600&&clearInterval(o)},100)}();"
+};
+var MIN_MARKER = "._lz=";
+
+var UNIVERSAL_MIN = "!function(){function n(n){try{void 0!==window.ALPlayableAnalytics&&window.ALPlayableAnalytics.trackEvent&&window.ALPlayableAnalytics.trackEvent(n)}catch(n){}}function t(n){try{return'undefined'!=typeof FbPlayableAd&&'function'==typeof FbPlayableAd[n]}catch(n){return!1}}function e(e,a){try{window.pi&&window.pi.logCta&&window.pi.logCta()}catch(n){}if(n('CTA_CLICKED'),t('onCTAClick'))try{return void FbPlayableAd.onCTAClick()}catch(n){}if('function'==typeof window.openAppStore)try{return void window.openAppStore()}catch(n){}if('undefined'!=typeof ExitApi&&ExitApi.exit)try{return void ExitApi.exit()}catch(n){}if('function'==typeof window.install)try{return void window.install()}catch(n){}if('function'==typeof window.openStore)try{return void window.openStore()}catch(n){}var i=function(n,t){var e=window.$environment&&window.$environment.packageConfig||{};n=n||e.iosLink,t=t||e.androidLink;var a=(window.navigator.userAgent||'').toLowerCase();return/iphone|ipad|ipod|macintosh/i.test(a)?n:t}(e,a);(function(n){if('undefined'==typeof mraid||!mraid.open)return!1;var t=function(){try{mraid.open(n)}catch(n){}};try{if(mraid.getState&&'loading'===mraid.getState())return mraid.addEventListener('ready',function n(){try{mraid.removeEventListener('ready',n)}catch(n){}t()}),!0}catch(n){}return t(),!0})(i)||window.open(i,'_blank')}var a=!1;function i(){try{window.dispatchEvent(new Event('luna:ended'))}catch(n){}try{window.pi&&window.pi.logGameEnd&&window.pi.logGameEnd()}catch(n){}if(!a){if(a=!0,'function'==typeof window.gameEnd)try{window.gameEnd()}catch(n){}if(n('ENDCARD_SHOWN'),t('logLevelComplete'))try{FbPlayableAd.logLevelComplete('game_end')}catch(n){}}}'function'!=typeof window.gameStart&&(window.gameStart=function(){try{window.dispatchEvent(new Event('luna:resume'))}catch(n){}}),'function'!=typeof window.gameClose&&(window.gameClose=function(){try{window.dispatchEvent(new Event('luna:pause'))}catch(n){}});var o={LogChallengeStarted:'CHALLENGE_STARTED',LogChallengeFailed:'CHALLENGE_FAILED',LogChallengeRetry:'CHALLENGE_RETRY',LogChallengePass25:'CHALLENGE_PASS_25',LogChallengePass50:'CHALLENGE_PASS_50',LogChallengePass75:'CHALLENGE_PASS_75',LogChallengeSolved:'CHALLENGE_SOLVED'};function r(t,e,a){var i=function(){n(a)};i.__k=1;try{Object.defineProperty(t,e,{value:i,writable:!0,enumerable:!1,configurable:!0})}catch(n){try{t[e]=i}catch(n){}}}var d=0,l=setInterval(function(){d++;try{var n=window.Luna&&window.Luna.Unity,t=n&&n.Playable,a=n&&n.LifeCycle,c=n&&n.Analytics;if(t&&t.InstallFullGame&&t.InstallFullGame!==e&&(t.InstallFullGame=e),a&&a.GameEnded!==i&&(a.GameEnded=i),c&&(c.Applovin||(c.Applovin={}),!function(n){try{var t=n.LogChallengeStarted;return!!t&&1===t.__k}catch(n){return!1}}(c.Applovin)))for(var w in o)o.hasOwnProperty(w)&&(r(c.Applovin,w,o[w]),r(c.Applovin,w+'$1',o[w]))}catch(n){}d>600&&clearInterval(l)},100),c=['LOADING','LOADED','DISPLAYED'],w=0,f=!1;function u(t){for(var e=c.indexOf(t)+1;w<e;)n(c[w]),w++}function y(){if(!f&&t('logGameLoad')){f=!0;try{FbPlayableAd.logGameLoad()}catch(n){}}}u('LOADING'),window.addEventListener('luna:build',function(){u('LOADED'),y()}),window.addEventListener('luna:start',function(){if(u('DISPLAYED'),y(),'function'==typeof window.gameReady)try{window.gameReady()}catch(n){}})}();";
+
+var UNIVERSAL_NOMRAID_MIN = "!function(){function n(n){try{void 0!==window.ALPlayableAnalytics&&window.ALPlayableAnalytics.trackEvent&&window.ALPlayableAnalytics.trackEvent(n)}catch(n){}}function t(n){try{return'undefined'!=typeof FbPlayableAd&&'function'==typeof FbPlayableAd[n]}catch(n){return!1}}function e(e,i){try{window.pi&&window.pi.logCta&&window.pi.logCta()}catch(n){}if(n('CTA_CLICKED'),t('onCTAClick'))try{return void FbPlayableAd.onCTAClick()}catch(n){}if('function'==typeof window.openAppStore)try{return void window.openAppStore()}catch(n){}if('undefined'!=typeof ExitApi&&ExitApi.exit)try{return void ExitApi.exit()}catch(n){}if('function'==typeof window.install)try{return void window.install()}catch(n){}if('function'==typeof window.openStore)try{return void window.openStore()}catch(n){}window.open(function(n,t){var e=window.$environment&&window.$environment.packageConfig||{};n=n||e.iosLink,t=t||e.androidLink;var i=(window.navigator.userAgent||'').toLowerCase();return/iphone|ipad|ipod|macintosh/i.test(i)?n:t}(e,i),'_blank')}var i=!1;function a(){try{window.dispatchEvent(new Event('luna:ended'))}catch(n){}try{window.pi&&window.pi.logGameEnd&&window.pi.logGameEnd()}catch(n){}if(!i){if(i=!0,'function'==typeof window.gameEnd)try{window.gameEnd()}catch(n){}if(n('ENDCARD_SHOWN'),t('logLevelComplete'))try{FbPlayableAd.logLevelComplete('game_end')}catch(n){}}}'function'!=typeof window.gameStart&&(window.gameStart=function(){try{window.dispatchEvent(new Event('luna:resume'))}catch(n){}}),'function'!=typeof window.gameClose&&(window.gameClose=function(){try{window.dispatchEvent(new Event('luna:pause'))}catch(n){}});var o={LogChallengeStarted:'CHALLENGE_STARTED',LogChallengeFailed:'CHALLENGE_FAILED',LogChallengeRetry:'CHALLENGE_RETRY',LogChallengePass25:'CHALLENGE_PASS_25',LogChallengePass50:'CHALLENGE_PASS_50',LogChallengePass75:'CHALLENGE_PASS_75',LogChallengeSolved:'CHALLENGE_SOLVED'};function l(t,e,i){var a=function(){n(i)};a.__k=1;try{Object.defineProperty(t,e,{value:a,writable:!0,enumerable:!1,configurable:!0})}catch(n){try{t[e]=a}catch(n){}}}var r=0,d=setInterval(function(){r++;try{var n=window.Luna&&window.Luna.Unity,t=n&&n.Playable,i=n&&n.LifeCycle,c=n&&n.Analytics;if(t&&t.InstallFullGame&&t.InstallFullGame!==e&&(t.InstallFullGame=e),i&&i.GameEnded!==a&&(i.GameEnded=a),c&&(c.Applovin||(c.Applovin={}),!function(n){try{var t=n.LogChallengeStarted;return!!t&&1===t.__k}catch(n){return!1}}(c.Applovin)))for(var w in o)o.hasOwnProperty(w)&&(l(c.Applovin,w,o[w]),l(c.Applovin,w+'$1',o[w]))}catch(n){}r>600&&clearInterval(d)},100),c=['LOADING','LOADED','DISPLAYED'],w=0,f=!1;function u(t){for(var e=c.indexOf(t)+1;w<e;)n(c[w]),w++}function p(){if(!f&&t('logGameLoad')){f=!0;try{FbPlayableAd.logGameLoad()}catch(n){}}}u('LOADING'),window.addEventListener('luna:build',function(){u('LOADED'),p()}),window.addEventListener('luna:start',function(){if(u('DISPLAYED'),p(),'function'==typeof window.gameReady)try{window.gameReady()}catch(n){}})}();";
+
+/* ===================== adapter (không có thẻ script) ===================== */
+function adapterBody(net) {
+  var common =
+'  function storeUrl(ios, android){\n' +
+'    var cfg = (window.$environment && window.$environment.packageConfig) || {};\n' +
+'    ios = ios || cfg.iosLink; android = android || cfg.androidLink;\n' +
+'    var ua = (window.navigator.userAgent || "").toLowerCase();\n' +
+'    return /iphone|ipad|ipod|macintosh/i.test(ua) ? ios : android;\n' +
+'  }\n';
+
+  if (net === "mintegral") {
+    return '/* ' + MARKER + ' v' + VERSION + ' -- Mintegral adapter */\n' +
+'!function(){\n' +
+'  var DBG = false;\n' +
+'  function log(m){ if (DBG) { try { console.log("mtg-adapter: " + m); } catch(e){} } }\n' +
+common +
+'  function mtgInstall(ios, android){\n' +
+'    try { if (window.pi && window.pi.logCta) window.pi.logCta(); } catch(e){}\n' +
+'    if (typeof window.install === "function"){ log("install()"); window.install(); return; }\n' +
+'    if (typeof window.openStore === "function"){ log("openStore()"); window.openStore(); return; }\n' +
+'    if (typeof mraid !== "undefined" && mraid.open){ log("mraid.open()"); mraid.open(storeUrl(ios, android)); return; }\n' +
+'    log("fallback window.open");\n' +
+'    window.open(storeUrl(ios, android), "_blank");\n' +
+'  }\n' +
+'  mtgInstall.__paConverter = "mintegral";\n' +
+'  var endedSent = false;\n' +
+'  function mtgGameEnded(){\n' +
+'    try { window.dispatchEvent(new Event("luna:ended")); } catch(e){}\n' +
+'    try { if (window.pi && window.pi.logGameEnd) window.pi.logGameEnd(); } catch(e){}\n' +
+'    if (!endedSent && typeof window.gameEnd === "function"){ endedSent = true; log("gameEnd()"); window.gameEnd(); }\n' +
+'  }\n' +
+'  mtgGameEnded.__paConverter = "mintegral";\n' +
+'  if (typeof window.gameStart !== "function"){\n' +
+'    window.gameStart = function(){ try { window.dispatchEvent(new Event("luna:resume")); } catch(e){} };\n' +
+'  }\n' +
+'  if (typeof window.gameClose !== "function"){\n' +
+'    window.gameClose = function(){ try { window.dispatchEvent(new Event("luna:pause")); } catch(e){} };\n' +
+'  }\n' +
+'  var tries = 0;\n' +
+'  var iv = setInterval(function(){\n' +
+'    tries++;\n' +
+'    try {\n' +
+'      var P = window.Luna && window.Luna.Unity && window.Luna.Unity.Playable;\n' +
+'      var L = window.Luna && window.Luna.Unity && window.Luna.Unity.LifeCycle;\n' +
+'      if (P && P.InstallFullGame && P.InstallFullGame.__paConverter !== "mintegral") P.InstallFullGame = mtgInstall;\n' +
+'      if (L && !(L.GameEnded && L.GameEnded.__paConverter === "mintegral")) L.GameEnded = mtgGameEnded;\n' +
+'    } catch(e){}\n' +
+'    if (tries > 600) clearInterval(iv);\n' +
+'  }, 100);\n' +
+'  window.addEventListener("luna:start", function(){\n' +
+'    if (typeof window.gameReady === "function"){ try { window.gameReady(); } catch(e){} }\n' +
+'  });\n' +
+'}();\n';
+  }
+
+  if (net === "tiktok") {
+    return '/* ' + MARKER + ' v' + VERSION + ' -- TikTok adapter */\n' +
+'!function(){\n' +
+'  var DBG = false;\n' +
+'  function log(m){ if (DBG) { try { console.log("tt-adapter: " + m); } catch(e){} } }\n' +
+common +
+'  /* TikTok cam creative dua tren chuan quang cao cu -> adapter nay khong goi\n' +
+'     bat ky API nao cua chuan do. Chi window.openAppStore() do SDK cua TikTok inject.\n' +
+'     Nhanh window.open ben duoi chi de test local, tren TikTok khong bao gio chay den. */\n' +
+'  function ttInstall(ios, android){\n' +
+'    try { if (window.pi && window.pi.logCta) window.pi.logCta(); } catch(e){}\n' +
+'    if (typeof window.openAppStore === "function"){\n' +
+'      log("window.openAppStore()");\n' +
+'      try { window.openAppStore(); return; } catch(e){}\n' +
+'    }\n' +
+'    log("chua co SDK TikTok, fallback window.open");\n' +
+'    window.open(storeUrl(ios, android), "_blank");\n' +
+'  }\n' +
+'  ttInstall.__paConverter = "tiktok";\n' +
+'  function ttGameEnded(){\n' +
+'    try { window.dispatchEvent(new Event("luna:ended")); } catch(e){}\n' +
+'    try { if (window.pi && window.pi.logGameEnd) window.pi.logGameEnd(); } catch(e){}\n' +
+'  }\n' +
+'  ttGameEnded.__paConverter = "tiktok";\n' +
+'  var tries = 0;\n' +
+'  var iv = setInterval(function(){\n' +
+'    tries++;\n' +
+'    try {\n' +
+'      var P = window.Luna && window.Luna.Unity && window.Luna.Unity.Playable;\n' +
+'      var L = window.Luna && window.Luna.Unity && window.Luna.Unity.LifeCycle;\n' +
+'      if (P && P.InstallFullGame && P.InstallFullGame.__paConverter !== "tiktok") P.InstallFullGame = ttInstall;\n' +
+'      if (L && !(L.GameEnded && L.GameEnded.__paConverter === "tiktok")) L.GameEnded = ttGameEnded;\n' +
+'    } catch(e){}\n' +
+'    if (tries > 600) clearInterval(iv);\n' +
+'  }, 100);\n' +
+'}();\n';
+  }
+
+  if (net === "meta") {
+    return '/* ' + MARKER + ' v' + VERSION + ' -- Meta / Facebook adapter */\n' +
+'!function(){\n' +
+'  var DBG = false;\n' +
+'  function log(m){ if (DBG) { try { console.log("fb-adapter: " + m); } catch(e){} } }\n' +
+'  /* SDK cua Meta duoc chinh platform inject, khong co khi test local ->\n' +
+'     luon kiem tra truoc khi goi.\n' +
+'     QUAN TRONG: playable preview cua Meta quet chuoi literal trong source, nen\n' +
+'     moi call site phai viet nguyen van ten day du cua ham. Goi qua bien trung\n' +
+'     gian se bi bao thieu API du code chay dung. */\n' +
+'  function hasFb(fn){\n' +
+'    try { return typeof FbPlayableAd !== "undefined" && typeof FbPlayableAd[fn] === "function"; }\n' +
+'    catch(e){ return false; }\n' +
+'  }\n' +
+common +
+'  function fbInstall(ios, android){\n' +
+'    try { if (window.pi && window.pi.logCta) window.pi.logCta(); } catch(e){}\n' +
+'    if (hasFb("onCTAClick")) {\n' +
+'      log("FbPlayableAd.onCTAClick()");\n' +
+'      try { FbPlayableAd.onCTAClick(); return; } catch(e){}\n' +
+'    }\n' +
+'    if (typeof mraid !== "undefined" && mraid.open){ log("mraid.open()"); mraid.open(storeUrl(ios, android)); return; }\n' +
+'    log("khong co SDK, fallback window.open");\n' +
+'    window.open(storeUrl(ios, android), "_blank");\n' +
+'  }\n' +
+'  fbInstall.__paConverter = "meta";\n' +
+'  var endedSent = false;\n' +
+'  function fbGameEnded(){\n' +
+'    try { window.dispatchEvent(new Event("luna:ended")); } catch(e){}\n' +
+'    try { if (window.pi && window.pi.logGameEnd) window.pi.logGameEnd(); } catch(e){}\n' +
+'    if (!endedSent) {\n' +
+'      endedSent = true;\n' +
+'      if (hasFb("logLevelComplete")) {\n' +
+'        log("FbPlayableAd.logLevelComplete(game_end)");\n' +
+'        try { FbPlayableAd.logLevelComplete("game_end"); } catch(e){}\n' +
+'      }\n' +
+'    }\n' +
+'  }\n' +
+'  fbGameEnded.__paConverter = "meta";\n' +
+'  var loadSent = false;\n' +
+'  function logLoadOnce(){\n' +
+'    if (loadSent) return;\n' +
+'    if (hasFb("logGameLoad")) {\n' +
+'      loadSent = true;\n' +
+'      log("FbPlayableAd.logGameLoad()");\n' +
+'      try { FbPlayableAd.logGameLoad(); } catch(e){}\n' +
+'    }\n' +
+'  }\n' +
+'  var tries = 0;\n' +
+'  var iv = setInterval(function(){\n' +
+'    tries++;\n' +
+'    try {\n' +
+'      var P = window.Luna && window.Luna.Unity && window.Luna.Unity.Playable;\n' +
+'      var L = window.Luna && window.Luna.Unity && window.Luna.Unity.LifeCycle;\n' +
+'      if (P && P.InstallFullGame && P.InstallFullGame.__paConverter !== "meta") P.InstallFullGame = fbInstall;\n' +
+'      if (L && !(L.GameEnded && L.GameEnded.__paConverter === "meta")) L.GameEnded = fbGameEnded;\n' +
+'    } catch(e){}\n' +
+'    if (tries > 600) clearInterval(iv);\n' +
+'  }, 100);\n' +
+'  /* Luna 3.1.0 dispatch luna:start truoc luna:build -> bat ca hai, chi log 1 lan */\n' +
+'  window.addEventListener("luna:build", logLoadOnce);\n' +
+'  window.addEventListener("luna:start", logLoadOnce);\n' +
+'}();\n';
+  }
+
+  if (net === "applovin") {
+    return '/* ' + MARKER + ' v' + VERSION + ' -- AppLovin adapter */\n' +
+'!function(){\n' +
+'  var DBG = false;\n' +
+'  function log(m){ if (DBG) { try { console.log("al-adapter: " + m); } catch(e){} } }\n' +
+'  /* AppLovin HTML analytics -- luon bao boc theo dung yeu cau cua AppLovin,\n' +
+'     de creative van chay binh thuong khi test local hoac chay o network khac */\n' +
+'  function al(ev){\n' +
+'    try {\n' +
+'      if (typeof window.ALPlayableAnalytics !== "undefined" && window.ALPlayableAnalytics.trackEvent) {\n' +
+'        window.ALPlayableAnalytics.trackEvent(ev);\n' +
+'        log(ev);\n' +
+'      }\n' +
+'    } catch(e){}\n' +
+'  }\n' +
+common +
+'  /* AppLovin bat buoc: khong goi MRAID API truoc khi mraid ready */\n' +
+'  function mraidOpen(url){\n' +
+'    if (typeof mraid === "undefined" || !mraid.open) return false;\n' +
+'    var go = function(){ try { log("mraid.open()"); mraid.open(url); } catch(e){} };\n' +
+'    try {\n' +
+'      if (mraid.getState && mraid.getState() === "loading") {\n' +
+'        log("mraid dang loading, cho ready");\n' +
+'        mraid.addEventListener("ready", function once(){\n' +
+'          try { mraid.removeEventListener("ready", once); } catch(e){}\n' +
+'          go();\n' +
+'        });\n' +
+'        return true;\n' +
+'      }\n' +
+'    } catch(e){}\n' +
+'    go();\n' +
+'    return true;\n' +
+'  }\n' +
+'  function alInstall(ios, android){\n' +
+'    try { if (window.pi && window.pi.logCta) window.pi.logCta(); } catch(e){}\n' +
+'    al("CTA_CLICKED");\n' +
+'    var url = storeUrl(ios, android);\n' +
+'    if (mraidOpen(url)) return;\n' +
+'    log("mraid khong co, fallback window.open");\n' +
+'    window.open(url, "_blank");\n' +
+'  }\n' +
+'  alInstall.__paConverter = "applovin";\n' +
+'  var endcardSent = false;\n' +
+'  function alGameEnded(){\n' +
+'    try { window.dispatchEvent(new Event("luna:ended")); } catch(e){}\n' +
+'    try { if (window.pi && window.pi.logGameEnd) window.pi.logGameEnd(); } catch(e){}\n' +
+'    if (!endcardSent){ endcardSent = true; al("ENDCARD_SHOWN"); }\n' +
+'  }\n' +
+'  alGameEnded.__paConverter = "applovin";\n' +
+'  /* Luna.Unity.Analytics.Applovin -- build unityads chi tao object rong, nen neu game\n' +
+'     co goi cac ham nay thi chung khong di dau ca. Map lai vao AppLovin. */\n' +
+'  var CHALLENGE = {\n' +
+'    LogChallengeStarted: "CHALLENGE_STARTED",\n' +
+'    LogChallengeFailed:  "CHALLENGE_FAILED",\n' +
+'    LogChallengeRetry:   "CHALLENGE_RETRY",\n' +
+'    LogChallengePass25:  "CHALLENGE_PASS_25",\n' +
+'    LogChallengePass50:  "CHALLENGE_PASS_50",\n' +
+'    LogChallengePass75:  "CHALLENGE_PASS_75",\n' +
+'    LogChallengeSolved:  "CHALLENGE_SOLVED"\n' +
+'  };\n' +
+'  /* Bridge dinh nghia cac member nay la accessor (get/set) khong enumerable, nen\n' +
+'     dung defineProperty de chac chan ghi de duoc, fallback ve phep gan thuong. */\n' +
+'  function setFn(ns, name, ev){\n' +
+'    var f = function(){ al(ev); };\n' +
+'    f.__paConverter = "applovin";\n' +
+'    try {\n' +
+'      Object.defineProperty(ns, name, { value: f, writable: true, enumerable: false, configurable: true });\n' +
+'    } catch(e) {\n' +
+'      try { ns[name] = f; } catch(e2) { return false; }\n' +
+'    }\n' +
+'    try { return !!ns[name] && ns[name].__paConverter === "applovin"; } catch(e){ return false; }\n' +
+'  }\n' +
+'  function wireChallenge(ns){\n' +
+'    var ok = true;\n' +
+'    for (var k in CHALLENGE) {\n' +
+'      if (!CHALLENGE.hasOwnProperty(k)) continue;\n' +
+'      if (!setFn(ns, k, CHALLENGE[k])) ok = false;\n' +
+'      if (!setFn(ns, k + "$1", CHALLENGE[k])) ok = false;\n' +
+'    }\n' +
+'    return ok;\n' +
+'  }\n' +
+'  function challengeWired(ns){\n' +
+'    try { var f = ns.LogChallengeStarted; return !!f && f.__paConverter === "applovin"; }\n' +
+'    catch(e){ return false; }\n' +
+'  }\n' +
+'  var tries = 0;\n' +
+'  var iv = setInterval(function(){\n' +
+'    tries++;\n' +
+'    try {\n' +
+'      var U = window.Luna && window.Luna.Unity;\n' +
+'      var P = U && U.Playable;\n' +
+'      var L = U && U.LifeCycle;\n' +
+'      var A = U && U.Analytics;\n' +
+'      if (P && P.InstallFullGame && P.InstallFullGame.__paConverter !== "applovin") P.InstallFullGame = alInstall;\n' +
+'      if (L && !(L.GameEnded && L.GameEnded.__paConverter === "applovin")) L.GameEnded = alGameEnded;\n' +
+'      if (A) {\n' +
+'        if (!A.Applovin) A.Applovin = {};\n' +
+'        if (!challengeWired(A.Applovin)) wireChallenge(A.Applovin);\n' +
+'      }\n' +
+'    } catch(e){}\n' +
+'    if (tries > 600) clearInterval(iv);\n' +
+'  }, 100);\n' +
+'  /* Funnel LOADING -> LOADED -> DISPLAYED phai dung thu tu va khong lap.\n' +
+'     Khong tin thu tu event noi bo cua Luna: ban 3.1.0 dispatch luna:start\n' +
+'     TRUOC luna:build, nen state machine tu bu cac buoc con thieu. */\n' +
+'  var FUNNEL = ["LOADING", "LOADED", "DISPLAYED"], sent = 0;\n' +
+'  function mark(stage){\n' +
+'    var upto = FUNNEL.indexOf(stage) + 1;\n' +
+'    while (sent < upto) { al(FUNNEL[sent]); sent++; }\n' +
+'  }\n' +
+'  mark("LOADING");\n' +
+'  window.addEventListener("luna:build", function(){ mark("LOADED"); });\n' +
+'  window.addEventListener("luna:start", function(){ mark("DISPLAYED"); });\n' +
+'}();\n';
+  }
+
+  return '/* ' + MARKER + ' v' + VERSION + ' -- Google Ads adapter */\n' +
+'!function(){\n' +
+'  var DBG = false;\n' +
+'  function log(m){ if (DBG) { try { console.log("gads-adapter: " + m); } catch(e){} } }\n' +
+common +
+'  function gExit(ios, android){\n' +
+'    try { if (window.pi && window.pi.logCta) window.pi.logCta(); } catch(e){}\n' +
+'    if (typeof ExitApi !== "undefined" && ExitApi.exit){ log("ExitApi.exit()"); ExitApi.exit(); return; }\n' +
+'    if (typeof window.clickTag === "string" && window.clickTag){ log("clickTag"); window.open(window.clickTag, "_blank"); return; }\n' +
+'    if (typeof mraid !== "undefined" && mraid.open){ log("mraid.open()"); mraid.open(storeUrl(ios, android)); return; }\n' +
+'    log("fallback window.open");\n' +
+'    window.open(storeUrl(ios, android), "_blank");\n' +
+'  }\n' +
+'  gExit.__paConverter = "google";\n' +
+'  function gGameEnded(){\n' +
+'    try { window.dispatchEvent(new Event("luna:ended")); } catch(e){}\n' +
+'    try { if (window.pi && window.pi.logGameEnd) window.pi.logGameEnd(); } catch(e){}\n' +
+'  }\n' +
+'  gGameEnded.__paConverter = "google";\n' +
+'  var tries = 0;\n' +
+'  var iv = setInterval(function(){\n' +
+'    tries++;\n' +
+'    try {\n' +
+'      var P = window.Luna && window.Luna.Unity && window.Luna.Unity.Playable;\n' +
+'      var L = window.Luna && window.Luna.Unity && window.Luna.Unity.LifeCycle;\n' +
+'      if (P && P.InstallFullGame && P.InstallFullGame.__paConverter !== "google") P.InstallFullGame = gExit;\n' +
+'      if (L && !(L.GameEnded && L.GameEnded.__paConverter === "google")) L.GameEnded = gGameEnded;\n' +
+'    } catch(e){}\n' +
+'    if (tries > 600) clearInterval(iv);\n' +
+'  }, 100);\n' +
+'}();\n';
+}
+
+function universalBody(nomraid) {
+  var mraidPart = nomraid ? '' :
+'  function openMraid(url){\n' +
+'    if (typeof mraid === "undefined" || !mraid.open) return false;\n' +
+'    var go = function(){ try { mraid.open(url); } catch(e){} };\n' +
+'    try {\n' +
+'      if (mraid.getState && mraid.getState() === "loading") {\n' +
+'        mraid.addEventListener("ready", function once(){\n' +
+'          try { mraid.removeEventListener("ready", once); } catch(e){} \n' +
+'          go();\n' +
+'        });\n' +
+'        return true;\n' +
+'      }\n' +
+'    } catch(e){}\n' +
+'    go(); return true;\n' +
+'  }\n\n';
+
+  var ctaFallback = nomraid
+    ? '    window.open(storeUrl(ios, android), "_blank");\n'
+    : '    var u = storeUrl(ios, android);\n' +
+      '    if (openMraid(u)) return;\n' +
+      '    window.open(u, "_blank");\n';
+
+  var label = nomraid ? "Universal Adapter (TikTok - no MRAID)" : "Universal Adapter (Feature Detection)";
+  return '/* ' + label + ' */\n' +
+'!function(){\n' +
+'  function storeUrl(ios, android){\n' +
+'    var cfg = (window.$environment && window.$environment.packageConfig) || {};\n' +
+'    ios = ios || cfg.iosLink; android = android || cfg.androidLink;\n' +
+'    var ua = (window.navigator.userAgent || "").toLowerCase();\n' +
+'    return /iphone|ipad|ipod|macintosh/i.test(ua) ? ios : android;\n' +
+'  }\n' +
+'  function al(ev){\n' +
+'    try {\n' +
+'      if (typeof window.ALPlayableAnalytics !== "undefined" && window.ALPlayableAnalytics.trackEvent)\n' +
+'        window.ALPlayableAnalytics.trackEvent(ev);\n' +
+'    } catch(e){}\n' +
+'  }\n' +
+'  function fb(fn){\n' +
+'    try { return typeof FbPlayableAd !== "undefined" && typeof FbPlayableAd[fn] === "function"; }\n' +
+'    catch(e){ return false; }\n' +
+'  }\n' +
+mraidPart +
+'  function cta(ios, android){\n' +
+'    try { if (window.pi && window.pi.logCta) window.pi.logCta(); } catch(e){}\n' +
+'    al("CTA_CLICKED");\n' +
+'    if (fb("onCTAClick")) { try { FbPlayableAd.onCTAClick(); return; } catch(e){} }\n' +
+'    if (typeof window.openAppStore === "function") { try { window.openAppStore(); return; } catch(e){} }\n' +
+'    if (typeof ExitApi !== "undefined" && ExitApi.exit) { try { ExitApi.exit(); return; } catch(e){} }\n' +
+'    if (typeof window.install === "function") { try { window.install(); return; } catch(e){} }\n' +
+'    if (typeof window.openStore === "function") { try { window.openStore(); return; } catch(e){} }\n' +
+ctaFallback +
+'  }\n\n' +
+'  var done = false;\n' +
+'  function ended(){\n' +
+'    try { window.dispatchEvent(new Event("luna:ended")); } catch(e){} \n' +
+'    try { if (window.pi && window.pi.logGameEnd) window.pi.logGameEnd(); } catch(e){} \n' +
+'    if (done) return; done = true;\n' +
+'    if (typeof window.gameEnd === "function") { try { window.gameEnd(); } catch(e){} }\n' +
+'    al("ENDCARD_SHOWN");\n' +
+'    if (fb("logLevelComplete")) { try { FbPlayableAd.logLevelComplete("game_end"); } catch(e){} }\n' +
+'  }\n\n' +
+'  if (typeof window.gameStart !== "function")\n' +
+'    window.gameStart = function(){ try { window.dispatchEvent(new Event("luna:resume")); } catch(e){} };\n' +
+'  if (typeof window.gameClose !== "function")\n' +
+'    window.gameClose = function(){ try { window.dispatchEvent(new Event("luna:pause")); } catch(e){} };\n\n' +
+'  var CH = { LogChallengeStarted:"CHALLENGE_STARTED", LogChallengeFailed:"CHALLENGE_FAILED",\n' +
+'             LogChallengeRetry:"CHALLENGE_RETRY", LogChallengePass25:"CHALLENGE_PASS_25",\n' +
+'             LogChallengePass50:"CHALLENGE_PASS_50", LogChallengePass75:"CHALLENGE_PASS_75",\n' +
+'             LogChallengeSolved:"CHALLENGE_SOLVED" };\n' +
+'  function setFn(ns, name, ev){\n' +
+'    var f = function(){ al(ev); }; f.__k = 1;\n' +
+'    try { Object.defineProperty(ns, name, {value:f, writable:true, enumerable:false, configurable:true}); }\n' +
+'    catch(e){ try { ns[name] = f; } catch(e2){} }\n' +
+'  }\n' +
+'  function wired(ns){ try { var f = ns.LogChallengeStarted; return !!f && f.__k === 1; } catch(e){ return false; } }\n\n' +
+'  var n = 0, iv = setInterval(function(){\n' +
+'    n++;\n' +
+'    try {\n' +
+'      var U = window.Luna && window.Luna.Unity;\n' +
+'      var P = U && U.Playable, L = U && U.LifeCycle, A = U && U.Analytics;\n' +
+'      if (P && P.InstallFullGame && P.InstallFullGame !== cta) P.InstallFullGame = cta;\n' +
+'      if (L && L.GameEnded !== ended) L.GameEnded = ended;\n' +
+'      if (A) {\n' +
+'        if (!A.Applovin) A.Applovin = {};\n' +
+'        if (!wired(A.Applovin))\n' +
+'          for (var k in CH) if (CH.hasOwnProperty(k)) { setFn(A.Applovin, k, CH[k]); setFn(A.Applovin, k + "$1", CH[k]); }\n' +
+'      }\n' +
+'    } catch(e){}\n' +
+'    if (n > 600) clearInterval(iv);\n' +
+'  }, 100);\n\n' +
+'  var F = ["LOADING","LOADED","DISPLAYED"], sent = 0, loaded = false;\n' +
+'  function mark(st){ var to = F.indexOf(st) + 1; while (sent < to) { al(F[sent]); sent++; } }\n' +
+'  function onLoad(){\n' +
+'    if (!loaded && fb("logGameLoad")) { loaded = true; try { FbPlayableAd.logGameLoad(); } catch(e){} }\n' +
+'  }\n' +
+'  mark("LOADING");\n' +
+'  window.addEventListener("luna:build", function(){ mark("LOADED"); onLoad(); });\n' +
+'  window.addEventListener("luna:start", function(){\n' +
+'    mark("DISPLAYED"); onLoad();\n' +
+'    if (typeof window.gameReady === "function") { try { window.gameReady(); } catch(e){} }\n' +
+'  });\n' +
+'}();\n';
+}
+
+function adapterTag(net, readable) {
+  if (readable) return "\n<script>\n" + adapterBody(net) + "<\/script>\n";
+  return "\n<script>" + ADAPTER_MIN[net] + "<\/script>\n";
+}
+
+/* ===================== ZIP đọc ===================== */
+async function inflateRaw(u8) {
+  var ds = new DecompressionStream("deflate-raw");
+  var buf = await new Response(new Blob([u8]).stream().pipeThrough(ds)).arrayBuffer();
+  return new Uint8Array(buf);
+}
+
+async function readZip(buf) {
+  var dv = new DataView(buf), u8 = new Uint8Array(buf), eocd = -1;
+  var floor = Math.max(0, buf.byteLength - 65557);
+  for (var i = buf.byteLength - 22; i >= floor; i--) {
+    if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error("Không đọc được ZIP (thiếu end-of-central-directory).");
+  var count = dv.getUint16(eocd + 10, true), off = dv.getUint32(eocd + 16, true);
+  var dec = new TextDecoder("utf-8"), entries = [];
+  for (var n = 0; n < count; n++) {
+    if (dv.getUint32(off, true) !== 0x02014b50) throw new Error("ZIP central directory bị lỗi.");
+    var method = dv.getUint16(off + 10, true);
+    var csize  = dv.getUint32(off + 20, true);
+    var usize  = dv.getUint32(off + 24, true);
+    var nlen   = dv.getUint16(off + 28, true);
+    var elen   = dv.getUint16(off + 30, true);
+    var clen   = dv.getUint16(off + 32, true);
+    var lho    = dv.getUint32(off + 42, true);
+    var name   = dec.decode(u8.subarray(off + 46, off + 46 + nlen));
+    var lnlen  = dv.getUint16(lho + 26, true);
+    var lelen  = dv.getUint16(lho + 28, true);
+    var start  = lho + 30 + lnlen + lelen;
+    entries.push({ name: name, method: method, comp: u8.subarray(start, start + csize), usize: usize });
+    off += 46 + nlen + elen + clen;
+  }
+  return entries;
+}
+
+/* ===================== ZIP ghi ===================== */
+var CRC_TBL = (function () {
+  var t = new Uint32Array(256);
+  for (var n = 0; n < 256; n++) {
+    var c = n;
+    for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(u8) {
+  var c = 0xFFFFFFFF;
+  for (var i = 0; i < u8.length; i++) c = CRC_TBL[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+async function deflateRaw(u8) {
+  var cs = new CompressionStream("deflate-raw");
+  var buf = await new Response(new Blob([u8]).stream().pipeThrough(cs)).arrayBuffer();
+  return new Uint8Array(buf);
+}
+async function zipFiles(files) {
+  /* files: [{name, text}] — ghi ZIP nhieu entry, dung cho config.json cua TikTok */
+  var enc = new TextEncoder();
+  var chunks = [], central = [], offset = 0;
+
+  for (var i = 0; i < files.length; i++) {
+    var data;
+    if (files[i].blob) {
+      data = new Uint8Array(await files[i].blob.arrayBuffer());
+    } else if (files[i].data) {
+      data = files[i].data instanceof Uint8Array ? files[i].data : new Uint8Array(files[i].data);
+    } else {
+      data = enc.encode(files[i].text);
+    }
+    var comp = await deflateRaw(data);
+    var method = 8;
+    if (comp.length >= data.length) { comp = data; method = 0; }
+    var crc = crc32(data), nameB = enc.encode(files[i].name);
+
+    var lh = new Uint8Array(30 + nameB.length), lv = new DataView(lh.buffer);
+    lv.setUint32(0, 0x04034b50, true); lv.setUint16(4, 20, true); lv.setUint16(6, 0, true);
+    lv.setUint16(8, method, true); lv.setUint16(10, 0, true); lv.setUint16(12, 0x2821, true);
+    lv.setUint32(14, crc, true); lv.setUint32(18, comp.length, true); lv.setUint32(22, data.length, true);
+    lv.setUint16(26, nameB.length, true); lv.setUint16(28, 0, true);
+    lh.set(nameB, 30);
+
+    var cd = new Uint8Array(46 + nameB.length), cv = new DataView(cd.buffer);
+    cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true);
+    cv.setUint16(8, 0, true); cv.setUint16(10, method, true); cv.setUint16(12, 0, true);
+    cv.setUint16(14, 0x2821, true); cv.setUint32(16, crc, true);
+    cv.setUint32(20, comp.length, true); cv.setUint32(24, data.length, true);
+    cv.setUint16(28, nameB.length, true); cv.setUint16(30, 0, true); cv.setUint16(32, 0, true);
+    cv.setUint16(34, 0, true); cv.setUint16(36, 0, true); cv.setUint32(38, 0, true);
+    cv.setUint32(42, offset, true);
+    cd.set(nameB, 46);
+
+    chunks.push(lh, comp);
+    central.push(cd);
+    offset += lh.length + comp.length;
+  }
+
+  var cdSize = central.reduce(function (n, c) { return n + c.length; }, 0);
+  var eo = new Uint8Array(22), ev = new DataView(eo.buffer);
+  ev.setUint32(0, 0x06054b50, true); ev.setUint16(4, 0, true); ev.setUint16(6, 0, true);
+  ev.setUint16(8, files.length, true); ev.setUint16(10, files.length, true);
+  ev.setUint32(12, cdSize, true); ev.setUint32(16, offset, true); ev.setUint16(20, 0, true);
+
+  return new Blob(chunks.concat(central, [eo]), { type: "application/zip" });
+}
+
+function tiktokConfig(orientation, languages) {
+  var o = orientation === "portrait" ? 1 : (orientation === "landscape" ? 2 : 0);
+  var langs = (languages && languages.length) ? languages : ["en"];
+  return '{\n  "playable_orientation": ' + o + ',\n  "playable_languages": ["' +
+         langs.join('", "') + '"]\n}\n';
+}
+
+/* ===================== nạp input ===================== */
+async function loadInput(file) {
+  var notes = [];
+  var buf = await file.arrayBuffer();
+  var u8 = new Uint8Array(buf);
+  var base = file.name.replace(/\.[^.]+$/, "");
+  var html;
+
+  if (u8[0] === 0x50 && u8[1] === 0x4B) {
+    var entries = await readZip(buf);
+    var htmls = entries.filter(function (e) {
+      return /\.html?$/i.test(e.name) && e.name.indexOf("__MACOSX") !== 0;
+    });
+    if (!htmls.length) throw new Error("ZIP không chứa file .html nào.");
+    htmls.sort(function (a, b) {
+      var ai = /(^|\/)index\.html?$/i.test(a.name) ? 0 : 1;
+      var bi = /(^|\/)index\.html?$/i.test(b.name) ? 0 : 1;
+      return ai - bi || b.usize - a.usize;
+    });
+    var pick = htmls[0];
+    if (htmls.length > 1) notes.push("ZIP có " + htmls.length + " file HTML, dùng: " + pick.name);
+
+    var others = entries.filter(function (e) {
+      return e.name !== pick.name && !/\/$/.test(e.name) &&
+             !/(^|\/)(README\.txt|urls\.txt)$/i.test(e.name) && e.name.indexOf("__MACOSX") !== 0;
+    });
+    if (others.length) {
+      notes.push("ZIP còn " + others.length + " file khác (" +
+        others.slice(0, 3).map(function (e) { return e.name; }).join(", ") +
+        (others.length > 3 ? ", …" : "") + ") — tool chỉ xử lý playable single-file, các file này bị bỏ qua.");
+    }
+
+    var raw = pick.method === 0 ? pick.comp : await inflateRaw(pick.comp);
+    html = new TextDecoder("utf-8").decode(raw);
+
+    var rd = entries.filter(function (e) { return /(^|\/)README\.txt$/i.test(e.name); })[0];
+    var app = null;
+    if (rd) {
+      var txt = new TextDecoder("utf-8").decode(rd.method === 0 ? rd.comp : await inflateRaw(rd.comp));
+      var m = txt.match(/Creatives for (.+?) exported at/);
+      if (m) app = m[1].trim();
+    }
+    base = app || pick.name.replace(/^.*\//, "").replace(/\.[^.]+$/, "");
+  } else {
+    html = new TextDecoder("utf-8").decode(u8);
+  }
+
+  base = base.replace(/[_-]?(unityads|default\s*creative)/gi, "")
+             .replace(/\s+/g, "_").replace(/^[\s_-]+|[\s_-]+$/g, "") || "playable";
+  return { html: html, base: base, notes: notes };
+}
+
+/* ===================== soi file ===================== */
+function inspect(html) {
+  function g(re) { var m = html.match(re); return m ? m[1] : null; }
+  var hosts = [], re = /https?:\/\/([a-zA-Z0-9._-]+)/g, m;
+  while ((m = re.exec(html))) if (hosts.indexOf(m[1]) < 0) hosts.push(m[1]);
+  return {
+    targetPlatform: g(/targetPlatform:"([^"]*)"/),
+    buildId: g(/buildId:(\d+)/),
+    orientation: g(/orientation:"([^"]*)"/),
+    androidLink: g(/androidLink:"([^"]*)"/) || "",
+    iosLink: g(/iosLink:"([^"]*)"/) || "",
+    languages: (function(){
+      var m = html.match(/languages:\["([^\]]*)"\]/);
+      if (!m) return [];
+      var out = [], seen = {};
+      m[1].split(/"\s*,\s*"/).forEach(function(l){ if (l && !seen[l]) { seen[l] = 1; out.push(l); } });
+      return out;
+    })(),
+    isLuna: html.indexOf("$environment") >= 0 && html.indexOf("luna:build") >= 0,
+    already: html.indexOf(MARKER) >= 0 || html.indexOf(MIN_MARKER) >= 0 || html.indexOf("__k=1") >= 0 || html.indexOf("1===t.__k") >= 0,
+    hosts: hosts.sort()
+  };
+}
+
+function enclosingScript(html, idx) {
+  var s = html.lastIndexOf("<script", idx);
+  if (s < 0) return null;
+  var e = html.indexOf("<\/script>", idx);
+  if (e < 0) return null;
+  return [s, e + 9];
+}
+
+function patchStoreLinks(html, iosLink, androidLink) {
+  var log = [];
+  if (iosLink !== undefined && iosLink !== null && iosLink.trim() !== "") {
+    var cleanIos = iosLink.trim();
+    if (/iosLink\s*:\s*["'][^"']*["']/.test(html)) {
+      html = html.replace(/iosLink\s*:\s*["'][^"']*["']/, 'iosLink:"' + cleanIos + '"');
+      log.push('Cập nhật <code>iosLink</code> → <code>' + cleanIos + '</code>');
+    } else if (/packageConfig\s*:\s*\{/.test(html)) {
+      html = html.replace(/(packageConfig\s*:\s*\{)/, '$1iosLink:"' + cleanIos + '",');
+      log.push('Chèn thêm <code>iosLink</code> vào packageConfig → <code>' + cleanIos + '</code>');
+    }
+  }
+  if (androidLink !== undefined && androidLink !== null && androidLink.trim() !== "") {
+    var cleanAndroid = androidLink.trim();
+    if (/androidLink\s*:\s*["'][^"']*["']/.test(html)) {
+      html = html.replace(/androidLink\s*:\s*["'][^"']*["']/, 'androidLink:"' + cleanAndroid + '"');
+      log.push('Cập nhật <code>androidLink</code> → <code>' + cleanAndroid + '</code>');
+    } else if (/packageConfig\s*:\s*\{/.test(html)) {
+      html = html.replace(/(packageConfig\s*:\s*\{)/, '$1androidLink:"' + cleanAndroid + '",');
+      log.push('Chèn thêm <code>androidLink</code> vào packageConfig → <code>' + cleanAndroid + '</code>');
+    }
+  }
+  return { html: html, log: log };
+}
+
+/* ===================== làm sạch ===================== */
+function sanitize(html) {
+  var log = [], warn = [];
+
+  /* 1. tag đóng bị lỗi */
+  var st = html.replace(/\s+$/, "");
+  var tail = st.slice(-40);
+  if (/<\/html>\s*(<\/head>|<\/html>|<\/body>)/i.test(tail)) {
+    html = st.slice(0, st.lastIndexOf("<\/body>")) + "<\/body>\n<\/html>\n";
+    log.push("Sửa tag đóng bị lỗi ở cuối file (Luna để lại <code>&lt;/head&gt;&lt;/html&gt;</code> thừa)");
+  } else if (!/<\/html>$/i.test(st) && st.indexOf("<\/body>") >= 0) {
+    html = st.slice(0, st.lastIndexOf("<\/body>")) + "<\/body>\n<\/html>\n";
+    log.push("Bổ sung thẻ </html> còn thiếu");
+  }
+
+  /* 2. block override console */
+  var anchor = -1, probes = ["console.re/connector.js", "devToolsAreOpen", "consolerescript"];
+  for (var i = 0; i < probes.length; i++) {
+    anchor = html.indexOf(probes[i]);
+    if (anchor >= 0) break;
+  }
+  if (anchor >= 0) {
+    var span = enclosingScript(html, anchor);
+    if (span) {
+      var block = html.slice(span[0], span[1]);
+      if (block.indexOf("devToolsAreOpen") >= 0 && block.indexOf("console") >= 0 && block.length < 8000) {
+        html = html.slice(0, span[0]) + html.slice(span[1]);
+        log.push("Xoá block remote-debugging của Luna (" + block.length.toLocaleString("vi-VN") +
+                 " bytes) → console không còn bị override");
+        ["devToolsAreOpen", "console.re", "consolerescript"].forEach(function (t) {
+          if (html.indexOf(t) >= 0) warn.push("Vẫn còn tham chiếu <code>" + t + "</code> sau khi xoá block — kiểm tra lại tay.");
+        });
+      } else {
+        warn.push("Tìm thấy dấu hiệu console override nhưng block không khớp mẫu (" +
+                  block.length + " bytes) — KHÔNG xoá, cần kiểm tra tay.");
+      }
+    } else {
+      warn.push("Tìm thấy dấu hiệu console override nhưng không xác định được thẻ &lt;script&gt;.");
+    }
+  } else {
+    log.push("Không có block override console (file đã sạch, hoặc Luna đổi pipeline)");
+  }
+
+  if (/console\s*\[\s*[a-zA-Z_$]+\s*\]\s*=/.test(html) ||
+      /console\.(log|warn|error|info|debug|trace)\s*=[^=]/.test(html)) {
+    warn.push("Vẫn còn code gán vào <code>console.*</code> → PlayTurbo sẽ báo lỗi #15, cần soi tay.");
+  }
+
+  /* 3. playgroundAssetOverrides */
+  var ov = html.match(/window\.playgroundAssetOverrides\s*=\s*\{[^}]*\}\s*;/);
+  if (ov && ov[0].indexOf("http") >= 0) {
+    var refs = (html.match(/playgroundAssetOverrides/g) || []).length;
+    if (refs === 1) {
+      html = html.replace(ov[0], "window.playgroundAssetOverrides = {};");
+      log.push("<code>window.playgroundAssetOverrides</code> → <code>{}</code> (bỏ URL asset trỏ ra CDN Luna; asset đã bake sẵn trong build)");
+    } else {
+      warn.push("playgroundAssetOverrides có URL ngoài VÀ được đọc ở nơi khác (" + refs +
+                " refs) — KHÔNG dám bỏ, cần xử lý tay.");
+    }
+  }
+
+  /* 4. de-host script debug */
+  DEBUG_HOSTS.forEach(function (host) {
+    var re = new RegExp("https?://" + host.replace(/\./g, "\\.") + "[^\"'\\)\\s]*", "g");
+    var found = html.match(re);
+    if (found) {
+      found.filter(function (u, i, a) { return a.indexOf(u) === i; }).forEach(function (u) {
+        html = html.split(u).join("about:blank");
+      });
+      log.push("<code>" + host + "</code> → <code>about:blank</code> (script debug, chỉ chạy khi có query param)");
+    }
+  });
+
+  /* 5. host còn lại */
+  var hosts = [], re2 = /https?:\/\/([a-zA-Z0-9._-]+)/g, m2;
+  while ((m2 = re2.exec(html))) if (hosts.indexOf(m2[1]) < 0) hosts.push(m2[1]);
+  hosts.sort();
+  var bad = hosts.filter(function (h) { return ALLOWED_HOSTS.indexOf(h) < 0; });
+  if (bad.length) warn.push("Còn host ngoài trong file: <code>" + bad.join("</code>, <code>") +
+                            "</code> — kiểm tra xem có phải runtime request không.");
+  log.push("Host còn lại: " + (hosts.length ? "<code>" + hosts.join("</code>, <code>") + "</code>" : "không có"));
+
+  return { html: html, log: log, warn: warn };
+}
+
+/* ===================== build ===================== */
+function build(html, net, orientation, readable, universal) {
+  var cfg = NETWORKS[net], log = [];
+
+  if (cfg.orientMeta) {
+    if (html.indexOf('name="ad.orientation"') >= 0) {
+      log.push("Đã có meta ad.orientation, giữ nguyên");
+    } else {
+      var o = (orientation === "portrait" || orientation === "landscape") ? orientation : "portrait,landscape";
+      html = html.replace("<\/head>", '<meta name="ad.orientation" content="' + o + '"><\/head>');
+      log.push('Thêm <code>&lt;meta name="ad.orientation" content="' + o + '"&gt;</code>');
+    }
+  }
+  if (cfg.exitapi) {
+    if (html.indexOf(EXITAPI) >= 0) {
+      log.push("Đã có exitapi.js, giữ nguyên");
+    } else {
+      html = html.replace("<\/head>", '<script type="text/javascript" src="' + EXITAPI + '"><\/script><\/head>');
+      log.push("Thêm <code>exitapi.js</code> của Google vào <code>&lt;head&gt;</code>");
+    }
+  }
+
+  if (cfg.tiktokSdk) {
+    if (html.indexOf(TIKTOK_SDK) >= 0) {
+      log.push("Đã có Playable-sdk.js của TikTok, giữ nguyên");
+    } else {
+      /* TikTok yêu cầu SDK nằm cuối <body>, TRƯỚC mọi custom JS */
+      var k = html.lastIndexOf("<\/body>");
+      html = html.slice(0, k) + '\n<script src="' + TIKTOK_SDK + '"><\/script>\n' + "<\/body>\n<\/html>\n";
+      log.push("Thêm <code>Playable-sdk.js</code> của TikTok trước adapter");
+    }
+  }
+
+  if (universal) {
+    if (net === "tiktok") {
+      var tag = readable
+        ? "\n<script>\n" + universalBody(true) + "<\/script>\n"
+        : "\n<script>" + UNIVERSAL_NOMRAID_MIN + "<\/script>\n";
+      var k = html.lastIndexOf("<\/body>");
+      html = html.slice(0, k) + tag + "<\/body>\n<\/html>\n";
+      log.push(readable
+        ? "Universal nomraid adapter bản <b>dễ đọc</b> cho TikTok"
+        : "Universal nomraid adapter bản <b>rút gọn</b> (" + UNIVERSAL_NOMRAID_MIN.length + " B) cho TikTok");
+      log.push("Inject universal nomraid adapter vào thẻ <code>&lt;script&gt;</code> riêng trước <code>&lt;/body&gt;</code> (sau SDK)");
+    } else {
+      var code = readable
+        ? "\n" + universalBody(false) + "\n"
+        : ";" + UNIVERSAL_MIN;
+      var k = html.lastIndexOf("<\/script>");
+      html = html.slice(0, k) + code + html.slice(k);
+      log.push(readable
+        ? "Universal adapter bản <b>dễ đọc</b> — nối vào thẻ &lt;script&gt; cuối"
+        : "Universal adapter bản <b>rút gọn</b> (" + UNIVERSAL_MIN.length + " B) — nối vào thẻ &lt;script&gt; cuối");
+      log.push("Nối universal adapter vào thẻ <code>&lt;script&gt;</code> cuối cùng của Luna (không tạo thẻ mới)");
+    }
+  } else {
+    var i = html.lastIndexOf("<\/body>");
+    html = html.slice(0, i) + adapterTag(net, readable) + "<\/body>\n<\/html>\n";
+    log.push(readable
+      ? "Adapter bản <b>dễ đọc</b> — có comment, tên biến đầy đủ"
+      : "Adapter bản <b>rút gọn</b> (" + ADAPTER_MIN[net].length + " B) — không comment, tên biến đã đổi, marker không lộ tên network");
+    log.push("Inject adapter <b>" + net + "</b> trước <code>&lt;/body&gt;</code>");
+  }
+  return { html: html, log: log };
+}
+
+/* ===================== UI ===================== */
+var $ = function (id) { return document.getElementById(id); };
+var state = { html: null, base: null, info: null };
+
+function fmt(n) {
+  return (n / 1048576).toFixed(2) + " MB (" + n.toLocaleString("vi-VN") + " bytes)";
+}
+function showErr(msg) {
+  $("errMsg").textContent = msg;
+  $("errBox").classList.remove("hide");
+}
+function hideAll() {
+  ["errBox", "info", "pick", "fixes", "out", "warns"].forEach(function (id) {
+    $(id).classList.add("hide");
+  });
+}
+
+$("drop").addEventListener("click", function () { $("file").click(); });
+["dragenter", "dragover"].forEach(function (ev) {
+  $("drop").addEventListener(ev, function (e) { e.preventDefault(); $("drop").classList.add("over"); });
+});
+["dragleave", "drop"].forEach(function (ev) {
+  $("drop").addEventListener(ev, function (e) { e.preventDefault(); $("drop").classList.remove("over"); });
+});
+$("drop").addEventListener("drop", function (e) {
+  if (e.dataTransfer.files && e.dataTransfer.files[0]) handle(e.dataTransfer.files[0]);
+});
+$("file").addEventListener("change", function (e) {
+  if (e.target.files && e.target.files[0]) handle(e.target.files[0]);
+});
+
+async function handle(file) {
+  hideAll();
+  try {
+    var r = await loadInput(file);
+    state.html = r.html; state.base = r.base;
+    state.info = inspect(r.html);
+    var i = state.info;
+
+    var rows = [
+      ["Tên file", file.name],
+      ["Size gốc", fmt(new TextEncoder().encode(r.html).length)],
+      ["targetPlatform", i.targetPlatform || "?"],
+      ["buildId", i.buildId || "?"],
+      ["orientation", i.orientation || "?"],
+      ["androidLink", i.androidLink || "<b>(TRỐNG)</b>"],
+      ["iosLink", i.iosLink || "<b>(TRỐNG)</b>"],
+      ["Build Luna", i.isLuna ? "có" : "<b>KHÔNG NHẬN RA</b>"]
+    ];
+    $("kv").innerHTML = rows.map(function (x) {
+      return "<tr><td>" + x[0] + "</td><td class=mono>" + x[1] + "</td></tr>";
+    }).join("");
+
+    var notes = r.notes.slice();
+    if (!i.isLuna) notes.push("File này không giống build Luna. Tool vẫn chạy nhưng kết quả có thể sai.");
+    if (i.already) notes.push("File này ĐÃ được convert bởi tool này trước đó — nên dùng file gốc từ Luna.");
+    $("infoNote").innerHTML = notes.length ? "⚠ " + notes.join("<br>⚠ ") : "";
+
+    if ($("iosLinkInput")) $("iosLinkInput").value = i.iosLink || "";
+    if ($("androidLinkInput")) $("androidLinkInput").value = i.androidLink || "";
+
+    $("info").classList.remove("hide");
+    $("pick").classList.remove("hide");
+  } catch (err) {
+    showErr("Lỗi đọc file: " + err.message);
+  }
+}
+
+var networkHtmls = {};
+
+$("go").addEventListener("click", async function () {
+  var nets = [].slice.call(document.querySelectorAll("label.net input:checked"))
+                .map(function (c) { return c.value; });
+  var readable = document.getElementById("readable").checked;
+  var universal = document.getElementById("universal").checked;
+  if (!nets.length) { showErr("Chọn ít nhất 1 network."); return; }
+  $("errBox").classList.add("hide");
+  $("go").disabled = true;
+  $("go").textContent = "Đang convert…";
+
+  try {
+    var iosOverride = $("iosLinkInput") ? $("iosLinkInput").value.trim() : "";
+    var androidOverride = $("androidLinkInput") ? $("androidLinkInput").value.trim() : "";
+    var workingHtml = state.html;
+    var linkLogs = [];
+    if (iosOverride || androidOverride) {
+      var pLinks = patchStoreLinks(workingHtml, iosOverride, androidOverride);
+      workingHtml = pLinks.html;
+      linkLogs = pLinks.log;
+    }
+
+    var s = sanitize(workingHtml);
+    if (linkLogs.length) {
+      s.log = linkLogs.concat(s.log);
+    }
+    $("fixList").innerHTML = s.log.map(function (l) { return "<li>" + l + "</li>"; }).join("");
+    $("fixes").classList.remove("hide");
+
+    var effectiveIos = iosOverride || state.info.iosLink;
+    var warns = s.warn.slice();
+    if (nets.indexOf("tiktok") >= 0) {
+      warns.push("TikTok <b>cấm creative dạng MRAID</b>. Adapter TikTok không gọi API nào của chuẩn đó, " +
+        "nhưng code MRAID của Luna vẫn còn trong file (trơ, vì TikTok không inject nó). Nếu bị reject vì MRAID thì đây là chỗ cần soi. " +
+        "TikTok chưa có playable tester riêng — test qua Ads Manager.");
+    }
+    if (nets.indexOf("meta") >= 0) {
+      if (universal) {
+        warns.push("Đang dùng <b>Universal Adapter</b>: bản Meta sẽ chứa tham chiếu hàm fallback tới các network khác (<code>ALPlayableAnalytics</code>, <code>window.install</code>). Rủi ro thấp nhưng nên test trên <a href='https://developers.facebook.com/tools/playable-preview/' target='_blank' rel='noopener'>Meta playable preview</a> trước khi chạy.");
+      }
+      warns.push("Meta chạy creative ở chế độ <b>muted</b> và cấm mọi request ra ngoài / script tracking. " +
+        "Test bằng <a href='https://developers.facebook.com/tools/playable-preview/' target='_blank' rel='noopener'>Meta playable preview</a> " +
+        "trước khi upload lên Ads Manager.");
+    }
+    if (nets.indexOf("applovin") >= 0 &&
+        (state.info.orientation === "portrait" || state.info.orientation === "landscape")) {
+      warns.push("AppLovin yêu cầu creative chạy được cả portrait <b>và</b> landscape, nhưng build này " +
+        "<code>orientation=" + state.info.orientation + "</code>. Test bằng " +
+        "<a href='https://p.applov.in/playablePreview?create=1' target='_blank' rel='noopener'>AppLovin Playable Preview</a> ở cả 2 hướng.");
+    }
+    if (!effectiveIos) {
+      warns.push("<code>iosLink</code> TRỐNG → traffic iOS bấm CTA sẽ không mở gì. Bạn có thể điền link vào ô <b>iOS Store Link</b> ở trên rồi bấm Convert lại.");
+    }
+
+    var outHtml = "";
+    var currentOutputs = [];
+    networkHtmls = {};
+
+    for (var n = 0; n < nets.length; n++) {
+      var net = nets[n], cfg = NETWORKS[net];
+      var b = build(s.html, net, state.info.orientation, readable, universal);
+      networkHtmls[net] = { label: cfg.label, html: b.html };
+
+      outHtml += "<div style='margin:14px 0 4px;font-weight:600'>" + cfg.label + "</div>";
+      outHtml += "<ul class=log style='margin-bottom:6px'>" +
+                 b.log.map(function (l) { return "<li>" + l + "</li>"; }).join("") + "</ul>";
+
+      var bytes = new TextEncoder().encode(b.html).length;
+      var limH = cfg.limitHtml || cfg.limit;
+      var fitsH = bytes <= limH;
+
+      if (cfg.emitHtml === "if_fits" && !fitsH) {
+        outHtml += "<div class=note style='margin:0 0 8px'>Bỏ qua single HTML: " + fmt(bytes) +
+          " &gt; limit " + fmt(limH) + " của network này. Dùng file ZIP bên dưới.</div>";
+      } else if (cfg.emitHtml) {
+        var nm = state.base + "_" + net + ".html";
+        var tight = fitsH && bytes > limH * 0.95;
+        var rInfo = row(nm, bytes, !fitsH, tight, "html", b.html, null, limH, net);
+        outHtml += rInfo.html;
+        currentOutputs.push({ name: nm, blob: rInfo.blob });
+        if (!fitsH) warns.push(nm + " vượt limit " + fmt(limH) + " — phải giảm size từ gốc Unity.");
+      }
+      if (cfg.emitZip) {
+        var zfiles = [{ name: "index.html", text: b.html }];
+        if (cfg.zipExtra === "tiktokConfig") {
+          var langs = (state.info.languages || []).length ? state.info.languages : ["en"];
+          zfiles.push({ name: "config.json", text: tiktokConfig(state.info.orientation, langs) });
+          outHtml += "<ul class=log style='margin:0 0 6px'><li>Thêm <code>config.json</code> vào ZIP: " +
+            "orientation=<code>" + (state.info.orientation || "?") + "</code>, languages=<code>" +
+            langs.join(", ") + "</code></li></ul>";
+        }
+        var zb = await zipFiles(zfiles);
+        var znm = state.base + "_" + net + ".zip";
+        var zover = zb.size > cfg.limit;
+        var ztight = !zover && cfg.softLimit && zb.size > cfg.softLimit;
+        var zrInfo = row(znm, zb.size, zover, ztight, "zip", null, zb, cfg.limit, net);
+        outHtml += zrInfo.html;
+        currentOutputs.push({ name: znm, blob: zb });
+        if (zover) warns.push(znm + " vượt limit " + fmt(cfg.limit) + ".");
+        else if (ztight) warns.push(znm + " vượt " + fmt(cfg.softLimit) +
+          ". Docs chính thức của TikTok ghi &lt;5 MB nén, nhưng bảng yêu cầu của Unity Playworks ghi 3 MB — hỏi rep TikTok trước khi chạy.");
+      }
+    }
+    $("outList").innerHTML = outHtml;
+    $("out").classList.remove("hide");
+
+    if (currentOutputs.length > 1) {
+      $("dlAll").classList.remove("hide");
+      $("dlAll").onclick = async function () {
+        $("dlAll").disabled = true;
+        var origText = $("dlAll").textContent;
+        $("dlAll").textContent = "Đang tạo master ZIP…";
+        try {
+          var masterBlob = await zipFiles(currentOutputs);
+          var url = URL.createObjectURL(masterBlob);
+          var a = document.createElement("a");
+          a.href = url;
+          a.download = state.base + "_all_networks.zip";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+        } catch (err) {
+          showErr("Lỗi tạo master ZIP: " + err.message);
+        } finally {
+          $("dlAll").disabled = false;
+          $("dlAll").textContent = origText;
+        }
+      };
+    } else {
+      $("dlAll").classList.add("hide");
+    }
+
+    if (warns.length) {
+      $("warnList").innerHTML = warns.map(function (w) { return "<li class=w>" + w + "</li>"; }).join("");
+      $("warns").classList.remove("hide");
+    } else {
+      $("warns").classList.add("hide");
+    }
+    wireDownloads();
+    wireEmulatorButtons();
+    $("out").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  } catch (err) {
+    showErr("Lỗi khi convert: " + err.message);
+  } finally {
+    $("go").disabled = false;
+    $("go").textContent = "Convert";
+  }
+});
+
+var blobs = {};
+var blobSeq = 0;
+function row(name, size, over, tight, kind, text, blob, limit, netKey) {
+  var id = "b" + (++blobSeq);
+  var theBlob = blob || new Blob([text], { type: "text/html;charset=utf-8" });
+  blobs[id] = theBlob;
+  var lbl = limit ? (limit / 1048576).toFixed(0) + "MB" : "5MB";
+  var badge = over ? "<span class='badge b-err'>VƯỢT " + lbl + "</span>"
+            : tight ? "<span class='badge b-warn'>SÁT LIMIT</span>"
+            : "<span class='badge b-ok'>OK</span>";
+  var testBtn = netKey ? "<button class='btn-test' data-net='" + netKey + "'>👁️ Test CTA</button>" : "";
+  var html = "<div class=res><span class='nm mono'>" + name + "</span>" +
+         "<span class=sz>" + fmt(size) + "</span>" + badge +
+         "<button class=dl data-b='" + id + "' data-n='" + name + "'>Tải về</button>" +
+         testBtn + "</div>";
+  return { html: html, id: id, blob: theBlob };
+}
+function wireDownloads() {
+  [].slice.call(document.querySelectorAll("button.dl")).forEach(function (btn) {
+    btn.onclick = function () {
+      var b = blobs[btn.getAttribute("data-b")];
+      var url = URL.createObjectURL(b);
+      var a = document.createElement("a");
+      a.href = url; a.download = btn.getAttribute("data-n");
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    };
+  });
+}
+
+/* ===================== Emulator Test CTA ===================== */
+var currentEmuBlobUrl = null;
+var currentEmuNet = null;
+
+function prepareEmulatorHtml(html, net) {
+  var mockScript = '<script>\n' +
+'(function() {\n' +
+'  var startTime = Date.now();\n' +
+'  function relTime() { return ((Date.now() - startTime) / 1000).toFixed(1) + "s"; }\n' +
+'  function send(kind, api, detail) {\n' +
+'    try {\n' +
+'      window.parent.postMessage({\n' +
+'        source: "LUNA_EMU",\n' +
+'        kind: kind,\n' +
+'        api: api,\n' +
+'        detail: detail || "",\n' +
+'        relTime: relTime()\n' +
+'      }, "*");\n' +
+'    } catch(e) {}\n' +
+'  }\n\n' +
+'  // 1. Mintegral Mock\n' +
+'  window.install = function() { send("cta", "window.install()", "Mintegral Store API"); };\n' +
+'  window.openStore = function() { send("cta", "window.openStore()", "Mintegral Fallback API"); };\n' +
+'  window.gameEnd = function() { send("evt", "window.gameEnd()", "Mintegral Endcard Event"); };\n\n' +
+'  // 2. Google Ads Mock\n' +
+'  window.ExitApi = { exit: function() { send("cta", "ExitApi.exit()", "Google Ads ExitApi"); } };\n\n' +
+'  // 3. Meta / Facebook Mock\n' +
+'  window.FbPlayableAd = {\n' +
+'    onCTAClick: function() { send("cta", "FbPlayableAd.onCTAClick()", "Meta Store API"); },\n' +
+'    logGameLoad: function() { send("evt", "FbPlayableAd.logGameLoad()", "Meta Game Loaded"); },\n' +
+'    logLevelComplete: function(lvl) { send("evt", "FbPlayableAd.logLevelComplete(\'" + (lvl||"") + "\')", "Meta Level Complete"); }\n' +
+'  };\n\n' +
+'  // 4. TikTok Mock\n' +
+'  window.openAppStore = function() { send("cta", "window.openAppStore()", "TikTok Store API"); };\n\n' +
+'  // 5. AppLovin & MRAID Mock\n' +
+'  window.mraid = {\n' +
+'    getState: function() { return "default"; },\n' +
+'    getVersion: function() { return "2.0"; },\n' +
+'    isViewable: function() { return true; },\n' +
+'    addEventListener: function(event, callback) {\n' +
+'      if (event === "ready") setTimeout(callback, 20);\n' +
+'    },\n' +
+'    removeEventListener: function() {},\n' +
+'    open: function(url) { send("cta", "mraid.open(\'" + (url || "") + "\')", "MRAID Store API (AppLovin)"); }\n' +
+'  };\n' +
+'  window.ALPlayableAnalytics = {\n' +
+'    trackEvent: function(ev) { send("evt", "ALPlayableAnalytics.trackEvent(\'" + ev + "\')", "AppLovin Analytics"); }\n' +
+'  };\n\n' +
+'  // 6. Generic window.open fallback interception\n' +
+'  window.open = function(url, target) {\n' +
+'    send("fallback", "window.open(\'" + (url || "") + "\')", "Fallback trình duyệt — Không qua SDK network!");\n' +
+'    return null;\n' +
+'  };\n' +
+'})();\n' +
+'<\/script>\n';
+
+  if (html.indexOf("<head>") >= 0) {
+    return html.replace("<head>", "<head>\n" + mockScript);
+  }
+  return mockScript + html;
+}
+
+function addEmuLog(kind, api, detail, time) {
+  var stream = $("emuLogStream");
+  if (!stream) return;
+  var item = document.createElement("div");
+  item.className = "stream-item " + kind;
+  item.innerHTML = "<span style='opacity:.65'>[" + time + "]</span> <b>" + api + "</b> " + (detail ? "— " + detail : "");
+  stream.appendChild(item);
+  stream.scrollTop = stream.scrollHeight;
+}
+
+function setCtaStatus(status, title, detail) {
+  var box = $("ctaStatusBox");
+  if (!box) return;
+  box.className = "cta-status-box cta-" + status;
+  $("ctaStatusTitle").textContent = title;
+  $("ctaStatusDetail").textContent = detail || "";
+}
+
+function openEmulator(net) {
+  var data = networkHtmls[net];
+  if (!data) return;
+  currentEmuNet = net;
+  $("emuTitle").textContent = "Kiểm tra CTA: " + data.label;
+  setCtaStatus("waiting", "Chờ tương tác trong game...", "Nhấp vào nút CTA hoặc hoàn thành gameplay để kiểm tra lệnh gọi API của " + net + ".");
+  $("emuLogStream").innerHTML = "";
+  addEmuLog("evt", "Khởi tạo sandbox", "Nạp ad cho " + data.label, "0.0s");
+
+  loadEmuIframe(data.html, net);
+  $("emulatorModal").classList.remove("hide");
+}
+
+function loadEmuIframe(rawHtml, net) {
+  if (currentEmuBlobUrl) {
+    URL.revokeObjectURL(currentEmuBlobUrl);
+    currentEmuBlobUrl = null;
+  }
+  var prepared = prepareEmulatorHtml(rawHtml, net);
+  var blob = new Blob([prepared], { type: "text/html;charset=utf-8" });
+  currentEmuBlobUrl = URL.createObjectURL(blob);
+  $("emuIframe").src = currentEmuBlobUrl;
+}
+
+function closeEmulator() {
+  $("emulatorModal").classList.add("hide");
+  if (currentEmuBlobUrl) {
+    URL.revokeObjectURL(currentEmuBlobUrl);
+    currentEmuBlobUrl = null;
+  }
+  $("emuIframe").src = "about:blank";
+}
+
+$("emuCloseBtn").onclick = closeEmulator;
+$("emulatorModal").onclick = function(e) {
+  if (e.target === $("emulatorModal")) closeEmulator();
+};
+
+$("emuReloadBtn").onclick = function() {
+  if (currentEmuNet && networkHtmls[currentEmuNet]) {
+    setCtaStatus("waiting", "Đã khởi động lại game...", "Chờ tương tác...");
+    addEmuLog("evt", "Khởi động lại", "Tải lại iframe", "0.0s");
+    loadEmuIframe(networkHtmls[currentEmuNet].html, currentEmuNet);
+  }
+};
+
+$("emuOrientBtn").onclick = function() {
+  var frame = $("phoneFrame");
+  if (frame.classList.contains("landscape")) {
+    frame.classList.remove("landscape");
+    $("emuOrientBtn").textContent = "📱 Đổi hướng: Dọc";
+  } else {
+    frame.classList.add("landscape");
+    $("emuOrientBtn").textContent = "🔄 Đổi hướng: Ngang";
+  }
+};
+
+window.addEventListener("message", function(e) {
+  if (!e.data || e.data.source !== "LUNA_EMU") return;
+  var d = e.data;
+  addEmuLog(d.kind, d.api, d.detail, d.relTime);
+  if (d.kind === "cta") {
+    setCtaStatus("success", "🎉 CTA KÍCH HOẠT THÀNH CÔNG!", d.api + " • " + d.detail + " (sau " + d.relTime + ")");
+  } else if (d.kind === "fallback") {
+    setCtaStatus("fail", "⚠️ CTA RƠI VÀO WINDOW.OPEN", d.api + " — Network sẽ KHÔNG tính click chuyển đổi!");
+  }
+});
+
+function wireEmulatorButtons() {
+  [].slice.call(document.querySelectorAll("button.btn-test")).forEach(function(btn) {
+    btn.onclick = function() {
+      var net = btn.getAttribute("data-net");
+      openEmulator(net);
+    };
+  });
+}
+
+if (typeof CompressionStream === "undefined" || typeof DecompressionStream === "undefined") {
+  showErr("Trình duyệt này không hỗ trợ CompressionStream — dùng Chrome/Edge 80+ hoặc Safari 16.4+.");
+  $("errBox").classList.remove("hide");
+}
+</script>
+</body>
+</html>

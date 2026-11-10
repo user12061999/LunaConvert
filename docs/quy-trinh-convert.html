@@ -1,0 +1,882 @@
+<title>Quy Trình Convert Playable</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=Be+Vietnam+Pro:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#f5f6fa; --panel:#ffffff; --panel-2:#eef0f7;
+  --ink:#14161d; --ink-2:#3d4353; --muted:#666e82;
+  --line:#dcdfea; --line-strong:#c3c8d9;
+  --accent:#3b46c4; --accent-soft:#e8eaf8;
+  --must:#a8241c;   --must-bg:#fbe9e7;
+  --should:#7d5200; --should-bg:#fbf1de;
+  --done:#0a6c39;   --done-bg:#e4f4ea;
+  --shadow:0 1px 2px rgba(20,22,29,.05), 0 10px 30px -12px rgba(20,22,29,.12);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d0f14; --panel:#15181f; --panel-2:#1c202a;
+    --ink:#e8eaf1; --ink-2:#c0c5d3; --muted:#8b93a7;
+    --line:#252a35; --line-strong:#39404f;
+    --accent:#93a0ff; --accent-soft:#1c2138;
+    --must:#ff9c92;   --must-bg:#331916;
+    --should:#efc078; --should-bg:#302512;
+    --done:#63dd9c;   --done-bg:#0f2f1e;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 10px 30px -12px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d0f14; --panel:#15181f; --panel-2:#1c202a;
+  --ink:#e8eaf1; --ink-2:#c0c5d3; --muted:#8b93a7;
+  --line:#252a35; --line-strong:#39404f;
+  --accent:#93a0ff; --accent-soft:#1c2138;
+  --must:#ff9c92;   --must-bg:#331916;
+  --should:#efc078; --should-bg:#302512;
+  --done:#63dd9c;   --done-bg:#0f2f1e;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 10px 30px -12px rgba(0,0,0,.6);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font:400 15.5px/1.62 "Be Vietnam Pro","Segoe UI",system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:960px;margin:0 auto;padding:0 22px 88px}
+
+.mast{padding:52px 0 30px;border-bottom:2px solid var(--line-strong)}
+.eyebrow{
+  font:500 11.5px/1 "JetBrains Mono",ui-monospace,monospace;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 16px;
+}
+h1{
+  font:700 clamp(30px,5.2vw,46px)/1.06 Archivo,"Be Vietnam Pro",sans-serif;
+  letter-spacing:-.025em;margin:0;text-wrap:balance;
+}
+.lede{margin:16px 0 0;max-width:63ch;color:var(--ink-2);font-size:16.5px}
+
+.flow{
+  margin-top:28px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;
+  font:500 12px/1 "JetBrains Mono",ui-monospace,monospace;color:var(--ink-2);
+}
+.flow span{background:var(--panel-2);padding:8px 11px;border-radius:5px;white-space:nowrap}
+.flow i{color:var(--muted);font-style:normal}
+
+h2{
+  font:700 24px/1.18 Archivo,"Be Vietnam Pro",sans-serif;
+  letter-spacing:-.018em;margin:58px 0 6px;text-wrap:balance;
+}
+h2 .step{
+  display:block;
+  font:500 11.5px/1 "JetBrains Mono",ui-monospace,monospace;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+  margin-bottom:9px;
+}
+h2 + .sub{margin:0 0 24px;color:var(--muted);font-size:14.5px;max-width:64ch}
+h3.edit{
+  font:600 17px/1.35 "Be Vietnam Pro",sans-serif;margin:34px 0 4px;
+}
+h3.edit em{
+  font-style:normal;color:var(--muted);font-weight:500;
+  font-family:"JetBrains Mono",ui-monospace,monospace;font-size:12.5px;
+  display:block;margin-top:3px;letter-spacing:.03em;
+}
+
+p{margin:0 0 14px;max-width:66ch}
+p.wide{max-width:none}
+.prose b{color:var(--ink)}
+
+code{
+  font:400 .88em/1.4 "JetBrains Mono",ui-monospace,monospace;
+  background:var(--panel-2);color:var(--ink);padding:2px 5px;border-radius:4px;
+  overflow-wrap:break-word;
+}
+pre{
+  margin:14px 0;padding:15px 17px;background:var(--panel-2);
+  border-radius:8px;overflow-x:auto;
+  font:400 12.5px/1.62 "JetBrains Mono",ui-monospace,monospace;color:var(--ink);
+}
+pre code{background:none;padding:0}
+pre b{color:var(--accent);font-weight:500}
+pre .del{color:var(--must)}
+pre .add{color:var(--done)}
+
+.scroller{overflow-x:auto;margin:0 -22px;padding:0 22px}
+table{border-collapse:collapse;width:100%;min-width:700px;font-size:13.5px}
+th,td{text-align:left;vertical-align:top;padding:12px 16px 12px 0;border-bottom:1px solid var(--line)}
+th{
+  font:600 11px/1.3 "JetBrains Mono",ui-monospace,monospace;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  border-bottom:1px solid var(--line-strong);white-space:nowrap;padding-top:0;
+}
+tbody tr:last-child td{border-bottom:0}
+td.net{font-weight:600;white-space:nowrap;color:var(--ink)}
+td.num{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.arrow{color:var(--muted);text-align:center;width:26px;padding-right:8px}
+
+/* network section */
+.net-block{border-top:2px solid var(--line-strong);padding-top:24px;margin-top:52px}
+.net-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.mono-tile{
+  flex:none;font:700 13px/28px Archivo,sans-serif;letter-spacing:.04em;
+  width:30px;height:28px;text-align:center;
+  background:var(--accent-soft);color:var(--accent);border-radius:5px;
+}
+.net-head h3{font:700 25px/1.15 Archivo,"Be Vietnam Pro",sans-serif;letter-spacing:-.02em;margin:0}
+.net-head .api{font:500 12.5px/1 "JetBrains Mono",ui-monospace,monospace;color:var(--muted)}
+
+/* need / mustnot lists */
+.reqs{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:22px 0 4px}
+@media (max-width:700px){.reqs{grid-template-columns:1fr}}
+.req{padding:15px 17px;border-radius:9px;border:1px solid var(--line);background:var(--panel)}
+.req.no{border-left:3px solid var(--must);border-radius:0 9px 9px 0}
+.req.yes{border-left:3px solid var(--done);border-radius:0 9px 9px 0}
+.req h4{
+  font:500 10.5px/1 "JetBrains Mono",ui-monospace,monospace;
+  letter-spacing:.12em;text-transform:uppercase;margin:0 0 11px;
+}
+.req.yes h4{color:var(--done)}
+.req.no h4{color:var(--must)}
+.req ul{margin:0;padding:0;list-style:none;display:grid;gap:9px}
+.req li{font-size:14px;color:var(--ink-2);padding-left:16px;position:relative;line-height:1.5}
+.req li:before{position:absolute;left:0;top:0;font-weight:700}
+.req.yes li:before{content:"+";color:var(--done)}
+.req.no li:before{content:"−";color:var(--must)}
+.req li b{color:var(--ink);font-weight:600}
+
+.callout{
+  margin:22px 0;padding:15px 17px;background:var(--should-bg);
+  border-radius:9px;font-size:14.5px;color:var(--ink-2);
+}
+.callout b{color:var(--ink)}
+.callout.warn{background:var(--must-bg)}
+.callout p:last-child{margin-bottom:0}
+
+.pack{
+  margin:20px 0 0;font:500 13px/1.6 "JetBrains Mono",ui-monospace,monospace;
+  color:var(--ink-2);background:var(--panel-2);padding:13px 16px;border-radius:8px;
+}
+.pack b{color:var(--ink)}
+
+td.plus{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;
+  white-space:nowrap;color:var(--done);font-weight:500}
+td.minus{font-family:"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums;
+  white-space:nowrap;color:var(--must);font-weight:500}
+tr.total td{border-top:2px solid var(--line-strong);border-bottom:0;font-weight:600;color:var(--ink)}
+.keep{
+  margin:22px 0 0;padding:15px 17px;border:1px solid var(--line);border-radius:9px;
+  background:var(--panel);box-shadow:var(--shadow);
+}
+.keep h4{font:600 15.5px/1.35 "Be Vietnam Pro",sans-serif;margin:0 0 10px}
+
+footer{
+  margin-top:60px;padding-top:22px;border-top:2px solid var(--line-strong);
+  color:var(--muted);font-size:13.5px;
+}
+footer p{margin:0 0 8px;max-width:66ch}
+</style>
+
+<div class="wrap">
+
+  <header class="mast">
+    <p class="eyebrow">Quy trình · từ file unityads của Luna</p>
+    <h1>Convert playable ads sang từng network</h1>
+    <p class="lede">Bạn có một file <code>*_unityads.html</code> export từ Luna Playground. Đây là quy trình biến nó thành build hợp lệ cho Mintegral, Google Ads, AppLovin, Meta và TikTok: sửa chỗ nào, thay hàm nào, và <b>network nào không được có hàm nào</b>.</p>
+    <div class="flow">
+      <span>file unityads</span><i>→</i>
+      <span>1. làm sạch</span><i>→</i>
+      <span>2. thay hàm CTA</span><i>→</i>
+      <span>3. đóng gói</span><i>→</i>
+      <span>4. kiểm tra</span>
+    </div>
+  </header>
+
+  <h2><span class="step">Bước 0</span>Định vị trong file Luna</h2>
+  <p class="sub">File là single HTML ~5 MB, minify hết. Đừng đọc từ đầu — dùng bảng này để nhảy thẳng tới chỗ cần sửa.</p>
+
+  <div class="scroller">
+    <table>
+      <thead><tr><th>Cần tìm</th><th>Grep</th><th>Nó là gì</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="net">CTA hiện tại</td>
+          <td><code>InstallFullGame</code></td>
+          <td>Cuối <code>&lt;body&gt;</code>. Luna gán <code>Luna.Unity.Playable.InstallFullGame</code> → <code>mraid.open(url)</code></td>
+        </tr>
+        <tr>
+          <td class="net">Game end</td>
+          <td><code>GameEnded</code></td>
+          <td><code>Luna.Unity.LifeCycle.GameEnded</code> — bản unityads chỉ log nội bộ, không gọi API network nào</td>
+        </tr>
+        <tr>
+          <td class="net">Store link</td>
+          <td><code>androidLink:"</code></td>
+          <td>Trong <code>window.$environment.packageConfig</code>. Cạnh nó là <code>iosLink</code> và <code>orientation</code></td>
+        </tr>
+        <tr>
+          <td class="net">Block ghi đè console</td>
+          <td><code>devToolsAreOpen</code></td>
+          <td>Một thẻ <code>&lt;script&gt;</code> IIFE độc lập ~1,3 KB, nằm gần đầu file</td>
+        </tr>
+        <tr>
+          <td class="net">Asset override</td>
+          <td><code>playgroundAssetOverrides</code></td>
+          <td>Map trỏ asset ra CDN <code>assets.lunalabs.io</code></td>
+        </tr>
+        <tr>
+          <td class="net">URL debug</td>
+          <td><code>https\?://</code></td>
+          <td>Liệt kê mọi host ngoài trong file</td>
+        </tr>
+        <tr>
+          <td class="net">Cuối file</td>
+          <td><code>tail -c 100</code></td>
+          <td>Chỗ Luna để lại tag đóng thừa</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2><span class="step">Bước 1</span>Bốn sửa chung cho mọi network</h2>
+  <p class="sub">Làm trước, một lần, trên bản gốc. Bốn sửa này giống nhau cho cả bốn network — sau đó mới nhân bản ra từng bản riêng.</p>
+
+  <h3 class="edit">1.1 Xoá block ghi đè <code>console</code><em>grep: devToolsAreOpen · bắt buộc</em></h3>
+  <p>Luna nhúng một block remote-debugging wrap cả 6 method của <code>console</code>:</p>
+  <pre><code>const s = ["debug","trace","info","log","warn","error"];
+for (const t of s) {
+  const s = console[t];
+  <span class="del">console[t] = (...r) =&gt; { …; window.devToolsAreOpen ? s.apply(console, r) : o++ }</span>
+}</code></pre>
+  <p>Mintegral báo lỗi <code>#15 Do not override global console method</code>. Block này còn swallow log khi devtools đóng, và poll <code>console.re</code> mỗi 100ms vô hạn.</p>
+  <p><b>Cách sửa:</b> xoá <b>cả thẻ <code>&lt;script&gt;…&lt;/script&gt;</code></b> chứa nó, không phải chỉ vòng <code>for</code>. Nó là IIFE độc lập. Sau khi xoá, kiểm ba symbol này phải về 0:</p>
+  <pre><code>grep -c 'devToolsAreOpen'   build.html   # 0
+grep -c 'console\.re'       build.html   # 0
+grep -c 'consolerescript'   build.html   # 0
+node -e 'console.log' … → <b>console.log.toString()</b> phải chứa "[native code]"</code></pre>
+
+  <h3 class="edit">1.2 Sửa tag đóng ở cuối file<em>grep: tail -c 100 · bắt buộc cho Google</em></h3>
+  <p>File Luna kết thúc bằng tag thừa. Browser bỏ qua nên test bằng mắt không thấy, nhưng Google validate explicit end tags sẽ bắt:</p>
+  <pre><code><span class="del">…&lt;/script&gt;&lt;/body&gt;
+&lt;/html&gt;&lt;/head&gt;&lt;/html&gt;</span>          ← sai
+<span class="add">…&lt;/script&gt;&lt;/body&gt;
+&lt;/html&gt;</span>                          ← đúng</code></pre>
+
+  <h3 class="edit">1.3 Dọn <code>playgroundAssetOverrides</code><em>grep: playgroundAssetOverrides · bắt buộc</em></h3>
+  <p>Rác của Playground preview harness — map trỏ asset ra CDN của Luna:</p>
+  <pre><code><span class="del">window.playgroundAssetOverrides = {"42706":"https://assets.lunalabs.io/…/….m4a"};</span>
+<span class="add">window.playgroundAssetOverrides = {};</span></code></pre>
+  <p>File audio đó <b>đã bake inline</b> trong build rồi. Nhưng <b>kiểm trước khi xoá</b>: đếm số lần biến này xuất hiện — phải đúng <b>1 lần</b> (tức là không code nào đọc nó). Nhiều hơn 1 thì có code đọc, phải xử lý tay:</p>
+  <pre><code>grep -o 'playgroundAssetOverrides' build.html | wc -l   # phải = 1</code></pre>
+
+  <h3 class="edit">1.4 De-host hai script debug<em>grep: mrdoob.github.io, cdn.jsdelivr.net</em></h3>
+  <p>Hai loader này chỉ chạy khi URL có query param <code>?bundles</code> / <code>?spector</code> nên không bao giờ fire thật — <b>nhưng static scanner vẫn đọc chuỗi URL</b>, và cả hai host đều nằm ngoài whitelist của Google.</p>
+  <pre><code><span class="del">https://mrdoob.github.io/stats.js/build/stats.min.js</span>       → <span class="add">about:blank</span>
+<span class="del">https://cdn.jsdelivr.net/npm/spectorjs@…/spector.bundle.js</span>  → <span class="add">about:blank</span></code></pre>
+  <p>Xong bốn bước, kiểm lại host còn sót. Chỉ được còn store link — và <code>tpc.googlesyndication.com</code> nếu là bản Google:</p>
+  <pre><code>grep -oE 'https?://[a-zA-Z0-9._-]+' build.html | sort -u</code></pre>
+
+  <div class="callout">
+    <p><b>Kiểm luôn store link tại đây.</b> <code>grep -o 'iosLink:"[^"]*"' build.html</code> — nếu rỗng thì traffic iOS bấm CTA sẽ mở vào chuỗi trống. <b>Không preview tool nào bắt được lỗi này</b> vì tool chỉ báo "đã có store click", không kiểm link trỏ đi đâu.</p>
+  </div>
+
+  <h2><span class="step">Bước 2</span>Cơ chế thay hàm CTA</h2>
+  <p class="sub">Hai quy tắc dưới đây áp dụng cho cả bốn network. Hiểu chúng trước khi xem code từng network.</p>
+
+  <h3 class="edit">Quy tắc 1 — ghi đè bằng polling, đừng sửa chỗ Luna gán</h3>
+  <p>Luna gán <code>InstallFullGame</code> bên trong <code>Bridge.ready()</code> ở event <code>luna:build</code>. Sửa trực tiếp code minify đó rất dễ vỡ. Thay vào đó <b>thêm một thẻ <code>&lt;script&gt;</code> mới ngay trước <code>&lt;/body&gt;</code></b> và ghi đè sau khi Luna khởi tạo:</p>
+  <pre><code>var n = 0, iv = setInterval(function(){
+  var P = window.Luna &amp;&amp; Luna.Unity &amp;&amp; Luna.Unity.Playable;
+  var L = window.Luna &amp;&amp; Luna.Unity &amp;&amp; Luna.Unity.LifeCycle;
+  if (P &amp;&amp; P.InstallFullGame &amp;&amp; !P.InstallFullGame.__mine) P.InstallFullGame = cta;
+  if (L &amp;&amp; !(L.GameEnded &amp;&amp; L.GameEnded.__mine))            L.GameEnded    = ended;
+  if (++n &gt; 600) clearInterval(iv);          // bỏ cuộc sau 60s
+}, 100);</code></pre>
+  <p>Dùng polling thay vì <code>addEventListener("luna:build")</code> vì listener của bạn có thể chạy <b>trước</b> listener của Luna, rồi bị Luna ghi đè lại. Polling thì luôn thắng. Cờ <code>__mine</code> để không gán lại vô ích mỗi 100ms.</p>
+  <p>Helper store link dùng chung cho mọi network:</p>
+  <pre><code>function storeUrl(){
+  var c = (window.$environment &amp;&amp; window.$environment.packageConfig) || {};
+  return /iphone|ipad|ipod|macintosh/i.test(navigator.userAgent) ? c.iosLink : c.androidLink;
+}</code></pre>
+
+  <h3 class="edit">Quy tắc 2 — viết tên hàm nguyên văn</h3>
+  <p><b>Preview tool của network quét chuỗi literal trong source, không chạy code.</b> Viết gọn kiểu này thì code chạy đúng nhưng validator báo thiếu API:</p>
+  <pre><code><span class="del">var F = window.FbPlayableAd;
+if (F &amp;&amp; F.onCTAClick) F.onCTAClick();</span>        // chạy đúng, validator không thấy
+
+<span class="add">if (typeof FbPlayableAd !== "undefined" &amp;&amp; FbPlayableAd.onCTAClick) {
+  FbPlayableAd.onCTAClick();
+}</span>                                          // đúng</code></pre>
+  <p>Áp dụng cho mọi API network: <code>window.install(</code>, <code>window.gameEnd(</code>, <code>ExitApi.exit(</code>, <code>mraid.open(</code>, <code>FbPlayableAd.onCTAClick(</code>. Đây là loại lỗi <b>test runtime không bắt được</b> — chỉ grep source mới thấy.</p>
+
+  <h2><span class="step">Bước 3</span>Từng network: cần gì, không được có gì</h2>
+  <p class="sub">Mỗi network chỉ khác nhau ở hàm CTA, vài hàm lifecycle, và cách đóng gói. Code dưới đây dán vào thẻ <code>&lt;script&gt;</code> mới trước <code>&lt;/body&gt;</code>.</p>
+
+  <section class="net-block">
+    <div class="net-head">
+      <span class="mono-tile">MT</span>
+      <h3>Mintegral</h3>
+      <span class="api">window.install · window.gameEnd</span>
+    </div>
+
+    <div class="reqs">
+      <div class="req yes">
+        <h4>Phải có</h4>
+        <ul>
+          <li><b><code>window.install()</code></b> — CTA mở store</li>
+          <li><b><code>window.gameEnd()</code></b> — bắt buộc, gọi khi hiện end card. Thiếu là fail review dù game chạy hoàn hảo</li>
+          <li><code>window.gameStart()</code> / <code>window.gameClose()</code> — creative định nghĩa, network gọi vào</li>
+          <li><code>window.gameReady()</code> — gọi nếu network cung cấp</li>
+        </ul>
+      </div>
+      <div class="req no">
+        <h4>Không được có</h4>
+        <ul>
+          <li>Ghi đè <code>console</code> — lỗi <b>#15</b>, chính là bước 1.1</li>
+          <li><code>mraid.*</code> làm đường CTA chính — Mintegral không inject <code>mraid</code></li>
+          <li><code>window.open()</code> làm CTA chính — network không đếm được click</li>
+          <li>Request ra ngoài</li>
+        </ul>
+      </div>
+    </div>
+
+    <pre><code>function cta(){
+  if (typeof <b>window.install</b> === "function") { <b>window.install()</b>; return; }
+  window.open(storeUrl(), "_blank");                 // chỉ để test local
+}
+cta.__mine = 1;
+
+var endSent = false;
+function ended(){
+  window.dispatchEvent(new Event("luna:ended"));
+  if (!endSent &amp;&amp; typeof <b>window.gameEnd</b> === "function") { endSent = true; <b>window.gameEnd()</b>; }
+}
+ended.__mine = 1;
+
+// network gọi vào creative → map sang pause/resume của engine
+window.gameStart = window.gameStart || function(){ window.dispatchEvent(new Event("luna:resume")); };
+window.gameClose = window.gameClose || function(){ window.dispatchEvent(new Event("luna:pause"));  };
+window.addEventListener("luna:start", function(){
+  if (typeof window.gameReady === "function") window.gameReady();
+});</code></pre>
+
+    <div class="pack">Đóng gói: <b>single HTML</b> hoặc <b>ZIP</b> · limit <b>5 MB</b> · nếu dùng ZIP thì file ZIP, folder Assets và file HTML phải <b>cùng tên</b></div>
+  </section>
+
+  <section class="net-block">
+    <div class="net-head">
+      <span class="mono-tile">GA</span>
+      <h3>Google Ads</h3>
+      <span class="api">ExitApi.exit · App campaigns / AdMob</span>
+    </div>
+
+    <div class="reqs">
+      <div class="req yes">
+        <h4>Phải có</h4>
+        <ul>
+          <li><b><code>exitapi.js</code></b> nhúng vào <code>&lt;head&gt;</code></li>
+          <li><b><code>ExitApi.exit()</code></b> — CTA</li>
+          <li><b><code>&lt;meta name="ad.orientation"&gt;</code></b> trong <code>&lt;head&gt;</code></li>
+          <li>DOCTYPE + <code>&lt;html&gt;</code> + <code>&lt;body&gt;</code> + explicit end tags → bước 1.2</li>
+          <li>Đóng gói <b>ZIP</b>, không nhận HTML rời</li>
+        </ul>
+      </div>
+      <div class="req no">
+        <h4>Không được có</h4>
+        <ul>
+          <li>Host ngoài <b>ngoài whitelist Google</b> — chỉ được Google Fonts, jQuery/GreenSock/CreateJS do Google host, Google ad APIs. Đây là lý do bắt buộc làm bước 1.4</li>
+          <li><code>window.open()</code> làm CTA chính</li>
+          <li>Tag đóng thiếu hoặc inline ending tag</li>
+          <li>Bật tiếng trước khi user tương tác</li>
+        </ul>
+      </div>
+    </div>
+
+    <p>Thêm hai dòng này vào <code>&lt;head&gt;</code>. Giá trị <code>content</code> lấy từ <code>orientation</code> trong config Luna (<code>portrait</code>, <code>landscape</code>, hoặc <code>portrait,landscape</code>):</p>
+    <pre><code><span class="add">&lt;meta name="ad.orientation" content="portrait"&gt;
+&lt;script src="https://tpc.googlesyndication.com/pagead/gadgets/html5/api/exitapi.js"&gt;&lt;/script&gt;</span></code></pre>
+
+    <pre><code>function cta(){
+  if (typeof <b>ExitApi</b> !== "undefined" &amp;&amp; <b>ExitApi.exit</b>) { <b>ExitApi.exit()</b>; return; }
+  if (typeof window.clickTag === "string" &amp;&amp; window.clickTag) { window.open(window.clickTag, "_blank"); return; }
+  window.open(storeUrl(), "_blank");                 // chỉ để test local
+}
+cta.__mine = 1;
+
+function ended(){ window.dispatchEvent(new Event("luna:ended")); }   // Google không có API game-end
+ended.__mine = 1;</code></pre>
+
+    <div class="callout">
+      <p><b>Lưu ý riêng của Google:</b> với <b>non-dynamic playable</b>, Google khuyến nghị <b>không tự đặt CTA</b> vì Google tự xử lý end card. Google Playable Tester (Beta) cũng không có click tag — nên nếu bị reject vì CTA, test qua giao diện Google Ads chứ đừng dựa vào tester.</p>
+    </div>
+
+    <div class="pack">Đóng gói: <b>chỉ ZIP</b> chứa <code>index.html</code> · limit <b>5 MB</b>, tối đa <b>512 files</b> · tối đa 20 ZIP mỗi ad group</div>
+  </section>
+
+  <section class="net-block">
+    <div class="net-head">
+      <span class="mono-tile">AL</span>
+      <h3>AppLovin</h3>
+      <span class="api">MRAID v2.0 · ALPlayableAnalytics</span>
+    </div>
+
+    <p class="prose">AppLovin dùng MRAID giống Unity Ads nên <b>CTA gần như giữ nguyên</b>. Nhưng có hai thứ phải làm thêm mà nếu bỏ qua thì không ai báo lỗi — chỉ mất tracking hoặc CTA thỉnh thoảng không ăn.</p>
+
+    <div class="reqs">
+      <div class="req yes">
+        <h4>Phải có</h4>
+        <ul>
+          <li><b><code>mraid.open(url)</code></b> — CTA</li>
+          <li><b>Gate chờ mraid ready</b> — không gọi MRAID API khi <code>getState() === "loading"</code></li>
+          <li>Chạy được <b>cả portrait và landscape</b></li>
+          <li>Đóng gói <b>single HTML</b>, không nhận ZIP</li>
+          <li><code>ALPlayableAnalytics.trackEvent()</code> — nên có, để đo funnel trong game</li>
+        </ul>
+      </div>
+      <div class="req no">
+        <h4>Không được có</h4>
+        <ul>
+          <li><code>window.open()</code> hoặc <code>clickTag</code> <b>trần</b> làm CTA</li>
+          <li>Gọi MRAID API <b>trước khi ready</b></li>
+          <li>Bất kỳ external network call nào</li>
+          <li>Auto-click, auto-play audio trước tương tác</li>
+        </ul>
+      </div>
+    </div>
+
+    <pre><code>function al(ev){                        // luôn bọc typeof — AppLovin yêu cầu
+  try { if (typeof window.<b>ALPlayableAnalytics</b> !== "undefined" &amp;&amp; window.ALPlayableAnalytics.trackEvent)
+    window.<b>ALPlayableAnalytics.trackEvent</b>(ev); } catch(e){}
+}
+
+function cta(){
+  al("CTA_CLICKED");
+  var url = storeUrl();
+  if (typeof mraid === "undefined" || !mraid.open) { window.open(url, "_blank"); return; }
+  <b>// gate: không gọi mraid khi đang loading</b>
+  if (mraid.getState &amp;&amp; mraid.getState() === "loading") {
+    mraid.addEventListener("ready", function once(){
+      mraid.removeEventListener("ready", once);
+      <b>mraid.open(url)</b>;
+    });
+    return;
+  }
+  <b>mraid.open(url)</b>;
+}
+cta.__mine = 1;
+
+var endSent = false;
+function ended(){
+  window.dispatchEvent(new Event("luna:ended"));
+  if (!endSent) { endSent = true; al("ENDCARD_SHOWN"); }
+}
+ended.__mine = 1;
+
+<b>// funnel phải đúng thứ tự và không lặp</b>
+var FUNNEL = ["LOADING","LOADED","DISPLAYED"], sent = 0;
+function mark(stage){
+  var upto = FUNNEL.indexOf(stage) + 1;
+  while (sent &lt; upto) { al(FUNNEL[sent]); sent++; }
+}
+mark("LOADING");
+window.addEventListener("luna:build", function(){ mark("LOADED");    });
+window.addEventListener("luna:start", function(){ mark("DISPLAYED"); });</code></pre>
+
+    <div class="callout warn">
+      <p><b>Vì sao funnel cần state machine chứ không map thẳng:</b> Luna pipeline 3.1.0 dispatch <code>luna:start</code> <b>trước</b> <code>luna:build</code>. Map thẳng hai event đó thì AppLovin nhận <code>DISPLAYED</code> trước <code>LOADED</code> — funnel sai mà đọc code không thấy, chỉ lộ ra khi chạy thật.</p>
+    </div>
+
+    <p class="prose">Nếu game có gọi challenge event từ C# thì cần thêm phần này. Trong build unityads, <code>Luna.Unity.Analytics.Applovin</code> chỉ là <b>object rỗng</b> — mọi call <code>LogChallengeStarted()</code> rơi vào hư không:</p>
+    <pre><code>var CHALLENGE = {
+  LogChallengeStarted:"CHALLENGE_STARTED", LogChallengeFailed:"CHALLENGE_FAILED",
+  LogChallengeRetry:"CHALLENGE_RETRY",     LogChallengePass25:"CHALLENGE_PASS_25",
+  LogChallengePass50:"CHALLENGE_PASS_50",  LogChallengePass75:"CHALLENGE_PASS_75",
+  LogChallengeSolved:"CHALLENGE_SOLVED"
+};
+function setFn(ns, name, ev){
+  var f = function(){ al(ev); }; f.__mine = 1;
+  <b>// Bridge định nghĩa các member này là accessor không enumerable</b>
+  try { Object.defineProperty(ns, name, {value:f, writable:true, enumerable:false, configurable:true}); }
+  catch(e){ try { ns[name] = f; } catch(e2){} }
+}
+// trong vòng poll, cùng chỗ ghi đè InstallFullGame:
+var A = window.Luna &amp;&amp; Luna.Unity &amp;&amp; Luna.Unity.Analytics;
+if (A) {
+  if (!A.Applovin) A.Applovin = {};
+  <b>// kiểm hàm THỰC TẾ có phải của mình không — Bridge có thể thay cả object sau init</b>
+  if (!(A.Applovin.LogChallengeStarted &amp;&amp; A.Applovin.LogChallengeStarted.__mine)) {
+    for (var k in CHALLENGE) { setFn(A.Applovin, k, CHALLENGE[k]); setFn(A.Applovin, k+"$1", CHALLENGE[k]); }
+  }
+}</code></pre>
+    <p class="prose">Hai chi tiết dễ sai ở đây: Bridge định nghĩa các member đó là <b>accessor không enumerable</b> (nên <code>Object.keys</code> không thấy, và phép gán thường có thể không ăn), và Bridge có thể <b>thay thế cả object</b> sau khi khởi tạo — nên phải kiểm hàm thực tế mỗi vòng poll, không đánh dấu object một lần rồi bỏ qua. Bridge sinh cả tên trần và tên có hậu tố <code>$1</code>, wire cả hai.</p>
+
+    <div class="pack">Đóng gói: <b>chỉ single HTML</b>, không nhận ZIP · limit <b>5 MB</b> · asset nhúng base64 / base122</div>
+  </section>
+
+  <section class="net-block">
+    <div class="net-head">
+      <span class="mono-tile">FB</span>
+      <h3>Meta</h3>
+      <span class="api">FbPlayableAd · Facebook / Instagram</span>
+    </div>
+
+    <p class="prose">Network khác biệt nhất: <b>không dùng MRAID</b>. Đây là chỗ hay làm hỏng creative port từ Unity Ads sang — <code>mraid</code> không tồn tại, CTA rơi xuống <code>window.open()</code>, Meta không đếm click. Game vẫn chạy nên test bằng mắt thấy bình thường.</p>
+
+    <div class="reqs">
+      <div class="req yes">
+        <h4>Phải có</h4>
+        <ul>
+          <li><b><code>FbPlayableAd.onCTAClick()</code></b> — CTA, viết <b>nguyên văn</b> (xem quy tắc 2)</li>
+          <li><code>FbPlayableAd.logGameLoad()</code> — nên có, gọi một lần khi load xong</li>
+          <li><code>FbPlayableAd.logLevelComplete(name)</code> — nên có, khi hết lượt</li>
+          <li>Chơi được khi <b>tắt tiếng</b> — Meta chạy creative muted</li>
+        </ul>
+      </div>
+      <div class="req no">
+        <h4>Không được có</h4>
+        <ul>
+          <li>Phụ thuộc <code>mraid</code> — <b>không tồn tại</b> trong sandbox Meta</li>
+          <li><b><code>FbPlayableAd.initializeLogging()</code></b> — xem callout dưới</li>
+          <li>Script tracking bên thứ ba — Meta có pixel riêng</li>
+          <li>Bất kỳ request ra ngoài nào</li>
+          <li>Gọi CTA qua biến trung gian</li>
+        </ul>
+      </div>
+    </div>
+
+    <pre><code>function hasFb(fn){
+  try { return typeof <b>FbPlayableAd</b> !== "undefined" &amp;&amp; typeof FbPlayableAd[fn] === "function"; }
+  catch(e){ return false; }
+}
+
+function cta(){
+  if (hasFb("onCTAClick")) { <b>FbPlayableAd.onCTAClick()</b>; return; }
+  window.open(storeUrl(), "_blank");                 // chỉ để test local
+}
+cta.__mine = 1;
+
+var endSent = false;
+function ended(){
+  window.dispatchEvent(new Event("luna:ended"));
+  if (!endSent &amp;&amp; hasFb("logLevelComplete")) { endSent = true; <b>FbPlayableAd.logLevelComplete</b>("game_end"); }
+}
+ended.__mine = 1;
+
+var loadSent = false;
+function logLoadOnce(){
+  if (!loadSent &amp;&amp; hasFb("logGameLoad")) { loadSent = true; <b>FbPlayableAd.logGameLoad()</b>; }
+}
+// bắt cả hai event vì Luna dispatch luna:start trước luna:build
+window.addEventListener("luna:build", logLoadOnce);
+window.addEventListener("luna:start", logLoadOnce);</code></pre>
+
+    <div class="callout warn">
+      <p><b>Đừng bật đường analytics Facebook có sẵn của Luna.</b> Build đã nhúng code map event sang <code>FbPlayableAd.logGameLoad</code> / <code>logLevelComplete</code> / <code>logButtonClick</code>, nhìn thì tưởng chỉ cần kích hoạt là xong. Nhưng bước init của nó gọi <code>FbPlayableAd.initializeLogging(statsUrl + "/facebook", …)</code> — tức là <b>gửi dữ liệu về server Luna</b>. Meta cấm request ra ngoài và cấm tracking bên thứ ba. Gọi thẳng SDK của Meta như code trên, đừng đi qua module <code>pi</code> của Luna.</p>
+    </div>
+
+    <div class="pack">Đóng gói: single HTML <b>≤ 2 MB</b> · hoặc ZIP <b>≤ 5 MB</b> (≤100 files) — file Luna thường &gt; 2 MB nên <b>thực tế phải dùng ZIP</b></div>
+  </section>
+
+  <section class="net-block">
+    <div class="net-head">
+      <span class="mono-tile">TT</span>
+      <h3>TikTok</h3>
+      <span class="api">window.openAppStore · Playable-sdk.js</span>
+    </div>
+
+    <p class="prose">Network cần nhiều thứ <b>ngoài</b> adapter nhất: một SDK riêng phải đặt trước adapter, và một file <code>config.json</code> trong ZIP. Đổi lại adapter của nó ngắn nhất trong năm cái, vì TikTok <b>cấm creative dạng MRAID</b> nên bỏ được toàn bộ nhánh fallback.</p>
+
+    <div class="reqs">
+      <div class="req yes">
+        <h4>Phải có</h4>
+        <ul>
+          <li><b><code>window.openAppStore()</code></b> — CTA</li>
+          <li><b><code>Playable-sdk.js</code></b> của TikTok ở cuối <code>&lt;body&gt;</code>, <b>trước</b> mọi custom JS — nó chính là thứ định nghĩa <code>openAppStore</code></li>
+          <li><b><code>config.json</code></b> ở gốc ZIP, cạnh <code>index.html</code></li>
+          <li><code>index.html</code> phải nằm ở <b>thư mục gốc</b> của ZIP</li>
+        </ul>
+      </div>
+      <div class="req no">
+        <h4>Không được có</h4>
+        <ul>
+          <li><b>Creative dạng MRAID</b> — TikTok cấm hẳn. Adapter không được có nhánh <code>mraid</code> nào.</li>
+          <li>Nạp nội dung động từ mạng ngoài</li>
+          <li>JavaScript redirect</li>
+          <li>HTTP request (trừ chính SDK của TikTok)</li>
+        </ul>
+      </div>
+    </div>
+
+    <p>Chèn SDK trước adapter — thứ tự này bắt buộc:</p>
+    <pre><code><span class="add">&lt;script src="https://sf16-muse-va.ibytedtos.com/obj/union-fe-nc-i18n/Playable/sdk/Playable-sdk.js"&gt;&lt;/script&gt;</span>
+&lt;!-- rồi mới tới thẻ adapter --&gt;</code></pre>
+
+    <pre><code>function cta(){
+  if (typeof <b>window.openAppStore</b> === "function"){ <b>window.openAppStore()</b>; return; }
+  window.open(storeUrl(), "_blank");            // chỉ để test local
+}
+cta.__mine = 1;
+
+function ended(){ window.dispatchEvent(new Event("luna:ended")); }   // TikTok không có API game-end
+ended.__mine = 1;</code></pre>
+
+    <p><code>config.json</code> ở gốc ZIP:</p>
+    <pre><code>{
+  "playable_orientation": 1,        <span class="add">// 0 responsive · 1 portrait · 2 landscape</span>
+  "playable_languages": ["en"]      <span class="add">// en · ja · ko · zh-Hant</span>
+}</code></pre>
+
+    <div class="callout">
+      <p><b>Hai chỗ nguồn không khớp nhau.</b> Limit: docs chính thức của TikTok ghi <b>&lt;5 MB nén</b>, bảng yêu cầu của Unity Playworks ghi <b>3 MB</b>. Tên key: help article của TikTok viết <code>Playable_orientation</code> hoa chữ P, Playworks viết thường. Nếu bị reject vì một trong hai, thử đổi sang biến thể còn lại và hỏi rep TikTok.</p>
+    </div>
+
+    <div class="callout warn">
+      <p><b>Code MRAID của Luna vẫn nằm trong engine bundle</b> — <code>mraid.open</code>, <code>getMraidAdData</code>, <code>viewableChange</code>. Chúng trơ vì TikTok không inject <code>mraid</code>, và không gỡ được mà không đụng vào bundle. Nếu bị reject vì MRAID thì đây là chỗ cần soi, không phải adapter.</p>
+    </div>
+
+    <div class="pack">Đóng gói: <b>chỉ ZIP</b> · <code>index.html</code> + <code>config.json</code> ở gốc · limit <b>5 MB</b>, cảnh báo từ 3 MB · <b>chưa có playable tester riêng</b>, test qua Ads Manager</div>
+  </section>
+
+  <h2><span class="step">Bước 4</span>Kiểm tra trước khi upload</h2>
+  <p class="sub">Thứ tự này có lý do: grep bắt được lỗi mà runtime không thấy, runtime bắt được lỗi mà grep không thấy, preview tool bắt phần còn lại.</p>
+
+  <h3 class="edit">4.1 Grep — bắt lỗi runtime không thấy</h3>
+  <pre><code># console còn native
+grep -c 'console\[' build.html                          # kỳ vọng 0
+
+# host ngoài còn sót
+grep -oE 'https?://[a-zA-Z0-9._-]+' build.html | sort -u
+
+# tag đóng cuối file
+tail -c 100 build.html
+
+# API network xuất hiện nguyên văn — chạy đúng dòng của network đang build
+grep -c 'window.install('            build.html   # Mintegral
+grep -c 'window.gameEnd('            build.html   # Mintegral
+grep -c 'ExitApi.exit('              build.html   # Google
+grep -c 'mraid.open('                build.html   # AppLovin
+grep -c 'FbPlayableAd.onCTAClick('   build.html   # Meta
+grep -c 'window.openAppStore('       build.html   # TikTok</code></pre>
+  <p>Với dòng cuối, nếu muốn chắc chắn chuỗi nằm trong <b>code thật</b> chứ không phải trong comment thì strip comment trước khi đếm.</p>
+
+  <h3 class="edit">4.2 Runtime — bắt lỗi grep không thấy</h3>
+  <p>Mở file trong browser với SDK giả của network, rồi kiểm hàm nào thực sự được gọi. Ví dụ cho Meta — dán vào console <b>trước khi</b> load file:</p>
+  <pre><code>window.__calls = [];
+window.FbPlayableAd = {
+  onCTAClick:       function(){ __calls.push("onCTAClick") },
+  logGameLoad:      function(){ __calls.push("logGameLoad") },
+  logLevelComplete: function(n){ __calls.push("logLevelComplete:" + n) }
+};
+window.open = function(u){ __calls.push("WINDOW_OPEN:" + u); };   // bẫy fallback
+
+// sau khi game load xong, bấm CTA rồi kiểm:
+__calls   // phải có "onCTAClick", KHÔNG được có "WINDOW_OPEN"</code></pre>
+  <p>Cách này bắt được đúng cái lỗi hay gặp nhất: CTA rơi xuống <code>window.open</code> vì SDK của network không được nhận ra. Đồng thời kiểm luôn <code>console.log.toString()</code> có còn <code>[native code]</code>, và mở tab Network xem có request nào ra ngoài.</p>
+
+  <h3 class="edit">4.3 Preview tool của network</h3>
+  <div class="scroller">
+    <table style="min-width:560px">
+      <thead><tr><th>Network</th><th>Tool</th></tr></thead>
+      <tbody>
+        <tr><td class="net">Mintegral</td><td><code>playturbo.com/review</code></td></tr>
+        <tr><td class="net">AppLovin</td><td><code>p.applov.in/playablePreview?create=1</code></td></tr>
+        <tr><td class="net">Meta</td><td><code>developers.facebook.com/tools/playable-preview/</code></td></tr>
+        <tr><td class="net">Google Ads</td><td>Qua giao diện Google Ads — đừng dựa vào Playable Tester Beta</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Bảng tra nhanh</h2>
+  <p class="sub">Toàn bộ phần thay đổi giữa các network, gom vào một bảng.</p>
+  <div class="scroller">
+    <table style="min-width:840px">
+      <thead>
+        <tr><th>Luna API</th><th></th><th>Mintegral</th><th>Google Ads</th><th>AppLovin</th><th>Meta</th><th>TikTok</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="net"><code>Playable.InstallFullGame</code></td>
+          <td class="arrow">→</td>
+          <td><code>window.install()</code></td>
+          <td><code>ExitApi.exit()</code></td>
+          <td><code>mraid.open(url)</code></td>
+          <td><code>FbPlayableAd.onCTAClick()</code></td>
+          <td><code>window.openAppStore()</code></td>
+        </tr>
+        <tr>
+          <td class="net"><code>LifeCycle.GameEnded</code></td>
+          <td class="arrow">→</td>
+          <td><code>window.gameEnd()</code> <b>bắt buộc</b></td>
+          <td>không có API</td>
+          <td><code>ENDCARD_SHOWN</code></td>
+          <td><code>logLevelComplete()</code></td>
+          <td>không có API</td>
+        </tr>
+        <tr>
+          <td class="net">Sửa <code>&lt;head&gt;</code></td>
+          <td class="arrow">→</td>
+          <td>không</td>
+          <td><code>exitapi.js</code> + meta orientation</td>
+          <td>không</td>
+          <td>không</td>
+          <td>SDK trước adapter + <code>config.json</code></td>
+        </tr>
+        <tr>
+          <td class="net">Đóng gói</td>
+          <td class="arrow">→</td>
+          <td class="num">HTML hoặc ZIP · 5 MB</td>
+          <td class="num">chỉ ZIP · 5 MB</td>
+          <td class="num">chỉ HTML · 5 MB</td>
+          <td class="num">2 MB HTML / 5 MB ZIP</td>
+          <td class="num">chỉ ZIP · 5 MB</td>
+        </tr>
+        <tr>
+          <td class="net">Có <code>mraid</code> không</td>
+          <td class="arrow">→</td>
+          <td>không</td>
+          <td>không</td>
+          <td><b>có</b></td>
+          <td>không</td>
+          <td>không — <b>cấm MRAID</b></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+
+  <h2><span class="step">Phụ lục</span>Diff thật đo trên file</h2>
+  <p class="sub">Số liệu dưới đây đo trực tiếp bằng cách chạy quy trình trên một file <code>*_unityads.html</code> thật rồi so từng byte với bản gốc — không phải ước lượng.</p>
+
+  <h3 class="edit">Toàn cảnh</h3>
+  <div class="scroller">
+    <table style="min-width:640px">
+      <thead><tr><th>Giai đoạn</th><th>Kích thước</th><th>Thay đổi</th><th>Ghi chú</th></tr></thead>
+      <tbody>
+        <tr><td class="net">File gốc unityads</td><td class="num">5.011.322 B</td><td class="num">—</td><td>bản export từ Luna Playground</td></tr>
+        <tr><td class="net">Sau bước 1 (làm sạch)</td><td class="num">5.009.779 B</td><td class="minus">−1.543</td><td>base dùng chung cho cả 4 network</td></tr>
+        <tr><td class="net">→ Mintegral</td><td class="num">5.012.206 B</td><td class="plus">+2.427</td><td>chỉ thêm adapter</td></tr>
+        <tr><td class="net">→ Google Ads</td><td class="num">5.011.781 B</td><td class="plus">+2.002</td><td>sửa <code>&lt;head&gt;</code> + adapter</td></tr>
+        <tr><td class="net">→ AppLovin</td><td class="num">5.014.862 B</td><td class="plus">+5.083</td><td>adapter dài nhất (funnel + challenge)</td></tr>
+        <tr><td class="net">→ Meta</td><td class="num">5.012.694 B</td><td class="plus">+2.915</td><td>chỉ thêm adapter</td></tr>
+        <tr><td class="net">→ TikTok</td><td class="num">5.011.803 B</td><td class="plus">+2.024</td><td>SDK + adapter · ZIP thêm <code>config.json</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose" style="margin-top:18px">Tổng phần bị đụng vào — xoá cộng thêm — nằm trong khoảng <b>3,5 đến 6,6 KB</b> trên file 5 MB, tức <b>khoảng 0,08 %</b>. Toàn bộ engine bundle của Unity, asset base64, và code game <b>không bị chạm tới một byte nào</b> — điều này đã được kiểm bằng cách so bằng từng ký tự phần giữa <code>&lt;/head&gt;</code> và thẻ adapter.</p>
+
+  <h3 class="edit">Bước 1 — bốn sửa, chi tiết từng byte</h3>
+  <div class="scroller">
+    <table style="min-width:700px">
+      <thead><tr><th>Sửa</th><th>Vị trí</th><th>Byte</th><th>Nội dung</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="net">A1 · block console</td>
+          <td class="num">offset ~4.772</td>
+          <td class="minus">−1.268</td>
+          <td>Xoá nguyên một thẻ <code>&lt;script&gt;</code> dài 1.268 B, nằm gần đầu file. Sau khi xoá: <code>devToolsAreOpen</code>, <code>console.re</code>, <code>consolerescript</code> đều về <b>0</b> tham chiếu.</td>
+        </tr>
+        <tr>
+          <td class="net">A2 · tag đóng</td>
+          <td class="num">cuối file</td>
+          <td class="minus">−13</td>
+          <td><code>…&lt;/body&gt;\n&lt;/html&gt;&lt;/head&gt;&lt;/html&gt;</code> → <code>…&lt;/body&gt;\n&lt;/html&gt;\n</code></td>
+        </tr>
+        <tr>
+          <td class="net">A3 · asset override</td>
+          <td class="num">khối config</td>
+          <td class="minus">−164</td>
+          <td>Bỏ một URL <code>assets.lunalabs.io/…/….m4a</code> khỏi <code>playgroundAssetOverrides</code></td>
+        </tr>
+        <tr>
+          <td class="net">A4 · script debug</td>
+          <td class="num">2 chỗ</td>
+          <td class="minus">−98</td>
+          <td>2 URL (<code>mrdoob.github.io</code>, <code>cdn.jsdelivr.net</code>) → <code>about:blank</code></td>
+        </tr>
+        <tr class="total">
+          <td>Tổng bước 1</td><td></td><td class="minus">−1.543</td>
+          <td>Host ngoài còn lại trong file: chỉ store link</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="edit">Bước 3 — phần thêm vào của từng network</h3>
+  <p>Chỉ có <b>hai vị trí</b> bị thêm nội dung: trước <code>&lt;/head&gt;</code> và trước <code>&lt;/body&gt;</code>. Không có sửa nào nằm giữa hai chỗ đó. Riêng TikTok có hai thẻ cùng chèn trước <code>&lt;/body&gt;</code> — SDK rồi mới tới adapter — và thêm một file thứ hai trong ZIP.</p>
+  <div class="scroller">
+    <table style="min-width:680px">
+      <thead><tr><th>Network</th><th>Thêm vào <code>&lt;head&gt;</code></th><th>Thêm trước <code>&lt;/body&gt;</code></th><th>Nội dung adapter</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="net">Mintegral</td><td class="num">0 B</td><td class="plus">+2.426 B</td>
+          <td>CTA <code>window.install</code>, <code>gameEnd</code> có guard, <code>gameStart</code>/<code>gameClose</code>/<code>gameReady</code></td>
+        </tr>
+        <tr>
+          <td class="net">Google Ads</td><td class="plus">+163 B</td><td class="plus">+1.838 B</td>
+          <td>CTA <code>ExitApi.exit</code>. Adapter ngắn nhất vì Google không có API game-end</td>
+        </tr>
+        <tr>
+          <td class="net">AppLovin</td><td class="num">0 B</td><td class="plus">+5.082 B</td>
+          <td>CTA có gate mraid, funnel state machine, 7 challenge event wire bằng <code>defineProperty</code></td>
+        </tr>
+        <tr>
+          <td class="net">Meta</td><td class="num">0 B</td><td class="plus">+2.914 B</td>
+          <td>CTA <code>FbPlayableAd.onCTAClick</code> viết nguyên văn, <code>logGameLoad</code>, <code>logLevelComplete</code></td>
+        </tr>
+        <tr>
+          <td class="net">TikTok</td><td class="num">0 B</td><td class="plus">+2.021 B</td>
+          <td>SDK 108 B + adapter 1.913 B. Adapter ngắn nhất vì bỏ hẳn nhánh MRAID. ZIP thêm <code>config.json</code> 64 B.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="prose" style="margin-top:18px">Toàn bộ 163 byte thêm vào <code>&lt;head&gt;</code> của bản Google là đúng hai thẻ này:</p>
+  <pre><code><span class="add">&lt;meta name="ad.orientation" content="portrait"&gt;
+&lt;script type="text/javascript" src="https://tpc.googlesyndication.com/pagead/gadgets/html5/api/exitapi.js"&gt;&lt;/script&gt;</span></code></pre>
+
+  <h3 class="edit">Cái gì KHÔNG bị xoá — và vì sao không sao</h3>
+  <p>Đây là chỗ dễ hiểu nhầm cụm "network X không được có hàm Y". Nó có nghĩa là <b>không được phụ thuộc vào</b>, hoặc <b>không được để chạy</b> — chứ không phải phải xoá khỏi file. Code MRAID gốc của Luna vẫn nằm nguyên trong cả bốn bản:</p>
+  <div class="scroller">
+    <table style="min-width:660px">
+      <thead><tr><th>Code còn lại</th><th>Số lần</th><th>Vì sao để yên được</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="net"><code>mraid.open(</code></td><td class="num">3</td>
+          <td>Nằm trong nhánh fallback có <code>typeof mraid !== "undefined"</code>. Ở network không có mraid thì nhánh này không bao giờ chạy.</td>
+        </tr>
+        <tr>
+          <td class="net"><code>getMraidAdData</code></td><td class="num">1</td>
+          <td>Luna đã bọc sẵn <code>try/catch</code>. Ở network khác nó throw rồi bị nuốt, không ảnh hưởng gì.</td>
+        </tr>
+        <tr>
+          <td class="net"><code>viewableChange</code></td><td class="num">1</td>
+          <td>Chỉ đăng ký khi <code>mraid</code> tồn tại. Không có mraid thì Luna tự dispatch <code>luna:start</code> và game vẫn chạy.</td>
+        </tr>
+        <tr>
+          <td class="net"><code>initializeLogging</code></td><td class="num">1</td>
+          <td>Đường analytics Facebook của Luna. Chỉ chạy khi module <code>pi</code> được init với network name <code>facebook</code> — mà bản Playground init <b>không tham số</b>, nên nó là code chết. <b>Đừng kích hoạt nó</b>: nó gửi dữ liệu về server Luna.</td>
+        </tr>
+        <tr>
+          <td class="net"><code>mraid.*</code> ở bản TikTok</td><td class="num">3</td>
+          <td>TikTok <b>cấm creative dạng MRAID</b>, nhưng code này nằm trong engine bundle chứ không phải adapter — không gỡ được mà không đụng vào bundle. Adapter TikTok thì sạch hoàn toàn, không chứa token <code>mraid</code> nào.</td>
+        </tr>
+        <tr>
+          <td class="net"><code>console.log</code></td><td class="num">75</td>
+          <td><b>Gọi</b> console thì không sao — validator chỉ cấm <b>ghi đè</b> console.</td>
+        </tr>
+        <tr>
+          <td class="net"><code>window.open(</code></td><td class="num">2–3</td>
+          <td>Chỉ là nhánh cuối của fallback chain, để test local. Ở network thật thì SDK bắt trước nên không tới lượt nó. Nếu muốn tuyệt đối an toàn với validator khó tính thì bỏ nhánh này đi.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="keep">
+    <h4>Hệ quả thực tế</h4>
+    <p style="margin-bottom:0">Vì cả năm bản dùng chung một base đã làm sạch và chỉ khác nhau ở phần thêm vào cuối <code>&lt;body&gt;</code>, nên khi có build mới từ Luna bạn <b>không phải làm lại từ đầu cho từng network</b>: làm sạch một lần, rồi ghép adapter tương ứng. Đó cũng chính là cách tool tự động hoá quy trình này hoạt động.</p>
+  </div>
+
+  <footer>
+    <p>Quy trình này áp dụng cho bản export <code>*_unityads.html</code> của Luna Playground, pipeline 3.1.0. Nếu Luna đổi pipeline thì các mốc grep ở bước 0 có thể lệch — định vị lại bằng chính các từ khoá đó trước khi sửa.</p>
+    <p>Cách chính thống vẫn là re-export từ Luna Playground với network tương ứng: Luna build sẵn adapter cho từng network. Nhưng chỉ Unity Ads là free, phần còn lại cần Pro plan — quy trình trên là đường đi khi bị chặn ở đó.</p>
+  </footer>
+
+</div>
